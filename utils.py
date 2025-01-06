@@ -50,9 +50,7 @@ def orderHits(hitsDict):
 
 
 def orderGroups(groupsDict):
-    result = OrderedDict(
-        sorted(groupsDict.items(), key=lambda x: np.sum(x[1]), reverse=True)
-    )
+    result = OrderedDict(sorted(groupsDict.items(), key=lambda x: np.sum(x[1]), reverse=True))
     return result
 
 
@@ -62,6 +60,14 @@ def hitUp(kmerStr, hitsDict):
     except KeyError:
         hitsDict.update({kmerStr: 1})
     return hitsDict
+
+
+def kmersSetTuple(hitDicts):
+    kmersIter = set()
+    for _dict in hitDicts:
+        for i in tuple(_dict.keys()):
+            kmersIter.add(i)
+    return tuple(kmersIter)
 
 
 # def filterHits(hitDicts):

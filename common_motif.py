@@ -1,6 +1,10 @@
 import numpy as np
+from Bio import Align, motifs
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from utils import getTestDNAStr, hitUp, testDNA
 
-from common_motif_discovery.utils import getTestDNAStr, hitUp, testDNA
+from common_motif_discovery.utils import kmersSetTuple
 
 
 def kmerToFreq(kmer, alphabet):
@@ -49,7 +53,8 @@ def kmerEnrichment(kmerLen, sequence, alphabet):
 
 def kmerHits(kmerLen, sequence, alphabet, threshold=0.51):
     """
-    kmer hits for a single sequence
+    kmer hits for a single sequence above the enrichment threshold
+    compared to background positional frequency matrix
     """
     result = {}
     _len = 1 + len(sequence) - kmerLen
@@ -59,14 +64,6 @@ def kmerHits(kmerLen, sequence, alphabet, threshold=0.51):
         if enrichment[i] > threshold:
             hitUp(slider, result)
     return result
-
-
-def kmersSetTuple(hitDicts):
-    kmersIter = set()
-    for _dict in hitDicts:
-        for i in tuple(_dict.keys()):
-            kmersIter.add(i)
-    return tuple(kmersIter)
 
 
 def seqsHits(minKmerLen, sequences):
@@ -103,28 +100,18 @@ def groupKmers(hitDicts, alphabet, similarity=0.7):
     return result
 
 
-# testStr = getTestDNAStr(10000)
-# testStrs = [getTestDNAStr(10) for i in range(2)]
-# testDicts = seqsHits(5, testStrs)
-# print(groupKmers(testDicts, alphabet=testDNA))
-
-"""
-
-reverse complement?
-
-"""
-
-# prueba = kmerHits(5, testStr)
-# print(prueba)
-# print("_" * 66)
-# print("_" * 66)
-# print("_" * 66)
-# print(groupKmers(prueba, testDNA))
-
-
 testSTR1 = "TTTTTACGTATTTTT"
 # x = positionFreqNoise(5, testSTR1, testDNA, relative=True)
 y = kmerHits(5, testSTR1, testDNA)
 # print(x)
-print(y)
+# print(y)
 print()
+
+# kmerSeqs = tuple(y.keys())
+# print(kmerSeqs)
+# kmerSeqs = [SeqRecord(i) for i in kmerSeqs]
+# a = Align.MultipleSeqAlignment(kmerSeqs)
+# print(a)
+# m = motifs.create()
+# print(m.consensus)
+# print(m.consensus)
