@@ -1,5 +1,5 @@
 import numpy as np
-from utils import getTestDNAStr, hitUp, kmersSetTuple, testDNA
+from utils import freqToSeq, getTestDNAStr, hitUp, kmersSetTuple, testDNA
 
 
 def kmerToFreq(kmer, alphabet):
@@ -8,7 +8,7 @@ def kmerToFreq(kmer, alphabet):
     kmer: str
 
     Returns:
-    numpy.ndarray: Positional Frequency Matrix
+    numpy.ndarray: positional frequency Matrix
     """
     matrix = []
     for i in alphabet:
@@ -42,7 +42,7 @@ def positionFreqNoise(kmerLen, sequence, alphabet):
     sum of letter frequency for every kmer of kmerLen
 
     Returns:
-    numpy.ndarray: Positional Frequency Matrix
+    numpy.ndarray: positional frequency matrix
     """
     result = np.zeros((len(alphabet), kmerLen))
     _len = 1 + len(sequence) - kmerLen
@@ -77,7 +77,7 @@ def kmerHits(kmerLen, sequence, alphabet, threshold=0.51):
     compared to background positional frequency matrix
 
     Params:
-    threshold: fold enrichment as a fraction of the most fold-enriched sequence (1)
+    threshold: fold enrichment as a fraction of the most fold-enriched kmer (1.0)
     """
     result = {}
     _len = 1 + len(sequence) - kmerLen
@@ -89,32 +89,34 @@ def kmerHits(kmerLen, sequence, alphabet, threshold=0.51):
     return result
 
 
-def seqsHits(kmerLen, sequences):
+def seqsHits(kmerLen, sequences, alphabet, threshold=0.51):
     """
     kmer hits per sequence for several sequences
 
     Params:
     sequences: list/tuple of strings
+    threshold: kmer fold enrichment as a fraction of the most fold-enriched  kmer (1.0) per seq
 
     Returns:
     list: list of dict {'kmers' : count} per input sequence
     """
     result = []
     for i in sequences:
-        result.append(kmerHits(kmerLen, i))
+        result.append(kmerHits(kmerLen, i, alphabet, threshold))
     return result
 
 
-def groupKmers(seqsHits, alphabet, similarity=0.7):
+def groupKmers(kmerLen, sequences, alphabet, threshold=0.51, similarity=0.7):
     """
     Params:
-    seqsHits: list(dict({'str':int}))
     similarity: fraction of letters shared to group together
+    threshold: kmer fold enrichment as a fraction of the most fold-enriched  kmer (1.0) per seq
 
     Returns:
-    np.array: Positional Frequency Matrix
+    dict: each kmer and the kmers it groups with as a positional freq matrix {str : ndarray}
     """
-    kmersIter = kmersSetTuple(seqsHits)
+    seqsHitsIter = seqsHits(kmerLen, sequences, alphabet, threshold=threshold)
+    kmersIter = kmersSetTuple(seqsHitsIter)
 
     rows = len(alphabet)
     cols = len(kmersIter[0])
@@ -123,7 +125,7 @@ def groupKmers(seqsHits, alphabet, similarity=0.7):
     for i in kmersIter:
         result.update({i: zeros})
 
-    for _dict in seqsHits:
+    for _dict in seqsHitsIter:
         for i in tuple(_dict.keys()):
             for j in kmersIter:
                 if pairKmers(i, j, alphabet, similarity):
@@ -134,8 +136,13 @@ def groupKmers(seqsHits, alphabet, similarity=0.7):
 testSTR1 = "TTTTTACGTATTTTT"
 testSTR2 = testSTR1.replace("T", "G")
 L = (testSTR1, testSTR1)
-y = kmerHits(5, testSTR1, testDNA, threshold=0.9)
-print(y)
-# x = seqsHits(5, L)
-# x = groupKmers()
+# y = kmerHits(5, testSTR1, testDNA, threshold=0.9)
+# print(y)
+# x = getSeqsHits(5, L, alphabet=testDNA)
+x = groupKmers(5, L, alphabet=testDNA, threshold=0.7)
+print(x)
+x = tuple(x.values())
+x = np.sum(x, axis=0)
 # print(x)
+print(freqToSeq(x, testDNA))
+print(freqToSeq(x, testDNA, skip_draw=True))

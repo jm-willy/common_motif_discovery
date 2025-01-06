@@ -70,6 +70,31 @@ def kmersSetTuple(hitDicts):
     return tuple(kmersIter)
 
 
+def freqToSeq(freqMatrix, alphabet, skipDraw=False):
+    """
+    Convert a frequency matrix to a sequence string with ambiguity notation.
+
+    Parameters:
+    freqMatrix (np.ndarray): Matrix of symbol row frequencies per position
+    alphabet (list): Ordered alphabet corresponding to matrix rows
+
+    Returns:
+    str: Sequence with ambiguity notation using square brackets
+    """
+    freqMatrix = np.array(freqMatrix)
+    sequence = ""
+    for col in range(freqMatrix.shape[-1]):
+        freqs = freqMatrix[:, col]
+        max_freq = np.max(freqs)
+        max_indices = np.where(freqs == max_freq)[0]
+        pos_alphabet = [alphabet[i] for i in max_indices]
+        if len(pos_alphabet) == 1:
+            sequence += pos_alphabet[0]
+        else:
+            sequence += f"[{''.join(pos_alphabet)}]"
+    return sequence
+
+
 # def filterHits(hitDicts):
 #     kmersIter = kmersSetTuple(hitDicts)
 
