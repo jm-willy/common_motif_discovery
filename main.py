@@ -109,23 +109,6 @@ def groupKmers(hitDicts, alphabet, similarity=0.7):
 # print(groupKmers(testDicts, alphabet=testDNA))
 
 """
-Here biopython motif search, let it handle the positional matrix calculation
-
-- Keep the matrix?
-
-- Repeat process
-
-Needful: kmer at least 1 occurrences per sequence after rest
-
-- For next cycles: string vs matrix? dict of matrix? with freq = position * count
-
-rest uniform matrix
-
-group motifs
-
-sum dicts
-
-repeat
 
 reverse complement?
 
