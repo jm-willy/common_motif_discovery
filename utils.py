@@ -70,7 +70,7 @@ def kmersSetTuple(hitDicts):
     return tuple(kmersIter)
 
 
-def freqToSeq(freqMatrix, alphabet, skipDraw=False):
+def freqToSeq(freqMatrix, alphabet):
     """
     Convert a frequency matrix to a sequence string with ambiguity notation.
 

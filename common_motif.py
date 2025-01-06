@@ -60,13 +60,15 @@ def kmerEnrichment(kmerLen, sequence, alphabet):
     Returns:
     numpy.ndarray: of len(sequence)
     """
+    e = 10**-6
     enrichment = []
     _len = 1 + len(sequence) - kmerLen
     noise = positionFreqNoise(kmerLen, sequence, alphabet)
     for i in range(_len):
         slider = sequence[i : i + kmerLen]
-        fold = kmerToFreq(slider, alphabet) / noise
+        fold = kmerToFreq(slider, alphabet) / (noise - e)
         enrichment.append(np.sum(fold))
+        fold
     enrichment = enrichment / np.max(enrichment)
     return enrichment
 
@@ -133,16 +135,21 @@ def groupKmers(kmerLen, sequences, alphabet, threshold=0.51, similarity=0.7):
     return result
 
 
-testSTR1 = "TTTTTACGTATTTTT"
+testSTR1 = "TTTTTACATTTTACAT"
+# testSTR1 = "TTTTTACGTATTACAT"
 testSTR2 = testSTR1.replace("T", "G")
 L = (testSTR1, testSTR1)
-# y = kmerHits(5, testSTR1, testDNA, threshold=0.9)
-# print(y)
+y = kmerHits(5, testSTR1, testDNA, threshold=0.9)
+print(y)
 # x = getSeqsHits(5, L, alphabet=testDNA)
-x = groupKmers(5, L, alphabet=testDNA, threshold=0.7)
-print(x)
-x = tuple(x.values())
-x = np.sum(x, axis=0)
-# print(x)
-print(freqToSeq(x, testDNA))
-print(freqToSeq(x, testDNA, skip_draw=True))
+# x = groupKmers(5, L, alphabet=testDNA, threshold=0.7)
+# # print(x)
+# # x = tuple(x.values())
+# # x = np.sum(x, axis=0)
+# # # print(x)
+# # print(freqToSeq(x, testDNA))
+# x = groupKmers(5, L, alphabet=testDNA, threshold=0.7)
+# for i in tuple(x.values()):
+#     print(i)
+#     print(freqToSeq(i, testDNA))
+#     print()
