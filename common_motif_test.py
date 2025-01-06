@@ -19,7 +19,6 @@ class TestDict(unittest.TestCase):
         self.assertTrue(not x)
         x = pairKmers("AC", "AT", alphabet=testDNA, similarity=0.5)
         self.assertTrue(x)
-        "TTTTTACGTATTTTT"
         return
 
     def test_kmerHits(self):
@@ -27,6 +26,9 @@ class TestDict(unittest.TestCase):
         self.assertTrue(x["ACGTA"] == 1)
         x = kmerHits(7, "TTTTTACGTATTTTT", alphabet=testDNA)
         self.assertTrue(x["TACGTAT"] == 1)
+        x = kmerHits(5, "TTTTTACGTATTTTT", testDNA, threshold=0.9)
+        self.assertTrue(x["ACGTA"] == 1)
+        self.assertTrue(len(x) == 1)
         return
 
 
