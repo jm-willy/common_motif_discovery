@@ -53,9 +53,10 @@ def positionFreqNoise(kmerLen, sequence, alphabet):
     return result
 
 
-def kmerEnrichment(kmerLen, sequence, alphabet):
+def letterEnrichment(kmerLen, sequence, alphabet):
     """
     enrichment = enrichment / np.max(enrichment)
+    compared to background positional frequency matrix
 
     Returns:
     numpy.ndarray: of len(sequence)
@@ -73,6 +74,14 @@ def kmerEnrichment(kmerLen, sequence, alphabet):
     return enrichment
 
 
+def kmerEnrichment():
+    return
+
+
+def getEnrichment():
+    return
+
+
 def kmerHits(kmerLen, sequence, alphabet, threshold=0.51):
     """
     kmer hits for a single sequence above the enrichment threshold
@@ -83,10 +92,10 @@ def kmerHits(kmerLen, sequence, alphabet, threshold=0.51):
     """
     result = {}
     _len = 1 + len(sequence) - kmerLen
-    enrichment = kmerEnrichment(kmerLen, sequence, alphabet)
+    enrichment = letterEnrichment(kmerLen, sequence, alphabet)
     for i in range(_len):
         slider = sequence[i : i + kmerLen]
-        if enrichment[i] > threshold:
+        if enrichment[i] >= threshold:
             hitUp(slider, result)
     return result
 
@@ -139,15 +148,15 @@ testSTR1 = "TTTTTACATTTTACAT"
 # testSTR1 = "TTTTTACGTATTACAT"
 testSTR2 = testSTR1.replace("T", "G")
 L = (testSTR1, testSTR1)
-y = kmerHits(5, testSTR1, testDNA, threshold=0.9)
+y = kmerHits(4, testSTR1, testDNA, threshold=1)
 print(y)
 # x = getSeqsHits(5, L, alphabet=testDNA)
-# x = groupKmers(5, L, alphabet=testDNA, threshold=0.7)
-# # print(x)
-# # x = tuple(x.values())
-# # x = np.sum(x, axis=0)
-# # # print(x)
-# # print(freqToSeq(x, testDNA))
+# x = groupKmers(5, L, alphabet=testDNA, threshold=1)
+# print(x)
+# x = tuple(x.values())
+# x = np.sum(x, axis=0)
+# print(x)
+# print(freqToSeq(x, testDNA))
 # x = groupKmers(5, L, alphabet=testDNA, threshold=0.7)
 # for i in tuple(x.values()):
 #     print(i)
