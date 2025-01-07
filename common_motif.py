@@ -1,5 +1,3 @@
-from ctypes import alignment
-
 import numpy as np
 from utils import freqToSeq, getTestDNAStr, hitUp, kmersSetTuple, testDNA
 
@@ -36,22 +34,29 @@ def pairKmers(seq1, seq2, alphabet, similarity=0.7):
     x = kmerToFreq(seq1, alphabet)
     y = kmerToFreq(seq2, alphabet)
     score = np.sum(x * y)
+    if score < similarity:
+        x = kmerToFreq(seq1[::-1], alphabet)
+        # y = kmerToFreq(seq2, alphabet)
+        score = np.sum(x * y)
     return score >= similarity
 
 
-def positionFreqNoise(kmerLen, sequence, alphabet):
+def freqNoise(kmerLen, sequence, alphabet):
     """
-    sum of letter frequency for every kmer of kmerLen
+    letter frequency for seq
 
     Returns:
     numpy.ndarray: positional frequency matrix
     """
-    result = np.zeros((len(alphabet), kmerLen))
-    _len = 1 + len(sequence) - kmerLen
+
+    sliderLen = 1
+    result = np.zeros((len(alphabet), sliderLen))
+    _len = 1 + len(sequence) - sliderLen
     for i in range(_len):
-        slider = sequence[i : i + kmerLen]
+        slider = sequence[i : i + sliderLen]
         result += kmerToFreq(slider, alphabet)
-    result = (result / np.sum(result)) * kmerLen
+    result = result / np.sum(result)
+    result = np.concat([result for i in range(kmerLen)], axis=-1)
     return result
 
 
@@ -63,10 +68,11 @@ def letterEnrichment(kmerLen, sequence, alphabet):
     Returns:
     numpy.ndarray: of len(sequence)
     """
+    # sequence = "".join(sequences)
     e = 10**-6
     enrichment = []
     _len = 1 + len(sequence) - kmerLen
-    noise = positionFreqNoise(kmerLen, sequence, alphabet)
+    noise = freqNoise(kmerLen, sequence, alphabet)
     for i in range(_len):
         slider = sequence[i : i + kmerLen]
         if slider == "TACAT":
@@ -94,17 +100,18 @@ def kmerHits(kmerLen, sequence, alphabet, threshold=0.51):
     Params:
     threshold: fold enrichment as a fraction of the most fold-enriched kmer (1.0)
     """
-    result = {}
     _len = 1 + len(sequence) - kmerLen
     enrichment = letterEnrichment(kmerLen, sequence, alphabet)
+    e = 10**-6
+    result = {}
     for i in range(_len):
         slider = sequence[i : i + kmerLen]
-        if enrichment[i] >= threshold:
+        if enrichment[i] >= (threshold - e):
             hitUp(slider, result)
     return result
 
 
-def seqsHits(kmerLen, sequences, alphabet, threshold=0.51):
+def seqsHits(kmerLen, sequences, alphabet, threshold=0.9):
     """
     kmer hits per sequence for several sequences
 
@@ -123,13 +130,15 @@ def seqsHits(kmerLen, sequences, alphabet, threshold=0.51):
 
 def kmerConvolution(x, y, alphabet):
     """
-    align 2 same length kmer frequency matrices through convolution
+    no-gap align 2 same length kmers seqs through convolution
     x is expanded, while y is slided over x like a convolutional kernel
 
     Params:
     op: sum or dot the freq matrices
+
+    Returns:
+    np.ndarray: positional freq matrix
     """
-    x = x[::-1]
     if len(x) != len(y):
         raise ValueError("kmerPairAlign different x and y lengths")
     xFreq = kmerToFreq(x, alphabet)
@@ -158,10 +167,14 @@ def kmerConvolution(x, y, alphabet):
     return result
 
 
-def kmerAlign(x, y, alphabet):
+def kmerConv(x, y, alphabet):
+    """
+    get the best positional freq matrix for x and y
+    seqs among both forward and reversed input
+    """
     a = kmerConvolution(x, y, alphabet)
     b = kmerConvolution(x[::-1], y, alphabet)
-    return a if np.sum(a) >= np.sum(b) else b
+    return a if np.sum(a) >= np.sum(b) else b.T[::-1].T
 
 
 def groupKmers(kmerLen, sequences, alphabet, threshold=0.51, similarity=0.5):
@@ -181,40 +194,47 @@ def groupKmers(kmerLen, sequences, alphabet, threshold=0.51, similarity=0.5):
     zeros = np.zeros((rows, cols))
     result = {}
     for i in kmersIter:
-        result.update({i: zeros})
+        result.update({i: {}})
 
     for _dict in seqsHitsIter:
         for i in tuple(_dict.keys()):
             for j in kmersIter:
                 if pairKmers(i, j, alphabet, similarity):
-                    result[j] += kmerToFreq(i, alphabet) * _dict[i]
+                    # result[j] += kmerToFreq(i, alphabet) * _dict[i]
+                    result.update({j: {i: _dict[i]}})
     return result
 
 
-# testSTR1 = "TTTTTACATTTTACATTTTTT"
-# # testSTR1 = "TTTTTACGTATTACAT"
-# testSTR2 = testSTR1.replace("T", "G")
-# L = (testSTR1, testSTR1)
+s1 = "TTTTTACATTTTAGATTTTTT"
+s2 = s1.replace("T", "G")
+L = (s1, s2)
 # # y = kmerHits(4, testSTR1, testDNA, threshold=1)
 # # print(y)
 # # x = getSeqsHits(5, L, alphabet=testDNA)
-# # x = groupKmers(5, L, alphabet=testDNA, threshold=1)
-# # print(x)
-# # x = tuple(x.values())
-# # x = np.sum(x, axis=0)
-# # print(x)
-# # print(freqToSeq(x, testDNA))
-# x = groupKmers(5, L, alphabet=testDNA, threshold=0.9)
-# print(x.keys())
+
+# x = groupKmers(5, L, alphabet=testDNA, threshold=0.)
 # print(x)
+# x = tuple(x.values())
+# x = np.sum(x, axis=0)
+# print(x)
+# print(freqToSeq(x, testDNA))
+
+x = groupKmers(5, L, alphabet=testDNA, threshold=0.6, similarity=0.7)
+print(x)
 # print()
+# print(x.keys())
 # for i in tuple(x.values()):
 #     print(i)
 #     print(freqToSeq(i, testDNA))
 #     print()
-s1 = "TTTACATTTAGA"
-s2 = s1.replace("T", "G")[::-1]
-rs = kmerAlign(s1, s2, testDNA)
-print(rs)
-print(np.sum(rs))
-print(freqToSeq(rs, testDNA))
+
+# s1 = "TTTACATTTAGA"
+# s2 = s1.replace("T", "G")
+# rs = kmerConv(s1, s2[::-1], testDNA)
+# print(rs)
+# print(np.sum(rs))
+# print(freqToSeq(rs, testDNA))
+
+s1 = "TTACA"
+s2 = "ACATT"
+print(pairKmers(s1, s2, testDNA, similarity=0.7))
