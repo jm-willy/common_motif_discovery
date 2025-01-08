@@ -5,11 +5,17 @@ from utils import *
 
 
 class TestDict(unittest.TestCase):
-    def test_kmerToFreq(self):
-        x = kmerToFreq("ACGTA", testDNA)
+    def test_seqToFreq(self):
+        x = seqToFreq("ACGTA", testDNA)
         self.assertEqual(x[0][0], 1)
         self.assertEqual(x[1][1], 1)
         self.assertEqual(x[3][3], 1)
+        return
+
+    def test_freqToSeq(self):
+        x = seqToFreq("ACGTA", testDNA)
+        x = freqToSeq(x, testDNA)
+        self.assertTrue(x == "ACGTA")
         return
 
     def test_pairKmers(self):
@@ -29,6 +35,21 @@ class TestDict(unittest.TestCase):
         x = kmerHits(5, "TTTTTACGTATTTTT", testDNA, threshold=0.9)
         self.assertTrue(x["ACGTA"] == 1)
         self.assertTrue(len(x) == 1)
+        return
+
+    def test_insertMotif(self):
+        x = insertMotif(0, "A", "TG")
+        self.assertTrue(x == "ATG")
+        x = insertMotif(1, "A", "TG")
+        self.assertTrue(x == "TAG")
+        x = insertMotif(2, "A", "TG")
+        self.assertTrue(x == "TGA")
+        return
+
+    def test_dnaWithMotif(self):
+        x = dnaWithMotif(["ACGTA"], motifCount=1, seqLen=10, seqCount=3)
+        x = ["ACGTA" in i for i in x]
+        self.assertTrue(all(x))
         return
 
 

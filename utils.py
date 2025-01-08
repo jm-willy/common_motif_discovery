@@ -1,4 +1,4 @@
-from collections import OrderedDict
+import random as r
 
 import numpy as np
 
@@ -37,20 +37,29 @@ def normalize_to_0_1(matrix):
     return (np.array(matrix) - np.min(matrix)) / (np.max(matrix) - np.min(matrix))
 
 
-def getTestDNAStr(length, GC=0.44):
+def randomDNA(length, GC=0.44):
     gc = GC / 2
     at = (1 - GC) / 2
     p = [at, gc, gc, at]
     return "".join(np.random.choice(testDNA, size=length, p=p))
 
 
-def orderHits(hitsDict):
-    result = OrderedDict(sorted(hitsDict.items(), key=lambda x: x[1], reverse=True))
-    return result
+def insertMotif(index, motif, seq):
+    return seq[:index] + motif + seq[index:]
 
 
-def orderGroups(groupsDict):
-    result = OrderedDict(sorted(groupsDict.items(), key=lambda x: np.sum(x[1]), reverse=True))
+def dnaWithMotif(motifs, motifCount, seqLen, seqCount):
+    if type(motifs) is not list and type(motifs) is not tuple:
+        raise ValueError("motifs type is list[str]")
+
+    result = []
+    for i in range(seqCount):
+        seq = randomDNA(seqLen)
+        for j in motifs:
+            for k in range(motifCount):
+                index = r.randint(0, seqLen)
+                seq = insertMotif(index, j, seq)
+        result.append(seq)
     return result
 
 
@@ -93,14 +102,3 @@ def freqToSeq(freqMatrix, alphabet):
         else:
             sequence += f"[{''.join(pos_alphabet)}]"
     return sequence
-
-
-# def filterHits(hitDicts):
-#     kmersIter = kmersSetTuple(hitDicts)
-
-#     for _dict in hitDicts:
-#         kmersKeys = tuple(_dict.keys())
-#         for i in kmersKeys:
-#             if i not in kmersIter:
-#                 del _dict[i]
-#     return hitDicts
