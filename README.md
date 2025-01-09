@@ -1,8 +1,13 @@
 # Common Motif Discovery
 
-A python tool to find a common DNA, RNA or amino acid subsequence among several sequences
+python tool to find a common DNA, RNA or amino acid subsequence common to several sequences
 
 ## Algorithm description
-1. get every kmer of base length (5)
-2. group every kmer by similarity
-3. 
+- get every kmer of base length (5)
+- get kmers common to all sequences by similarity
+- group the common kmers by similarity
+- get motifs from each group
+- repeat to grow the obtanied motifs
+
+### Details
+- Similarity = matches / length, done by multipying matrices then dividing reduce sum by length

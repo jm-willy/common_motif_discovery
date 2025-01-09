@@ -266,45 +266,12 @@ def growKmer():
     return
 
 
-# s1 = "TTTTTACATTTTAGATTTTTT"
-# s2 = s1.replace("T", "G")
-# L = (s1, s2)
-# # # y = kmerHits(4, testSTR1, testDNA, threshold=1)
-# # # print(y)
-# # # x = getSeqsHits(5, L, alphabet=testDNA)
-
-# x = groupKmers(5, L, alphabet=testDNA, threshold=0.9)
-# print(x)
-# print("\n\n")
-# x = motifGroup(5, L, alphabet=testDNA, threshold=0.9)
-# print(x)
-# print("\n\n")
-# x = motifForLen(5, L, alphabet=testDNA, threshold=0.9)
-# print(x)
-
-# # x = groupKmers(5, L, alphabet=testDNA, threshold=0.9, similarity=0.7)
-# # print(x)
-# # print()
-# # print(x.keys())
-# # for i in tuple(x.values()):
-# #     print(i)
-# #     print(freqToSeq(i, testDNA))
-# #     print()
-
-# # s1 = "TTTACATTTAGA"
-# # s2 = s1.replace("T", "G")
-# # rs = kmerConv(s1, s2[::-1], testDNA)
-# # print(rs)
-# # print(np.sum(rs))
-# # print(freqToSeq(rs, testDNA))
-
-
 @benchmark
 def extract():
     print("\n" * 2)
-    s0 = dnaWithMotif(["TACGT"], motifCount=2, seqLen=70, seqCount=4)
+    s0 = dnaWithMotif(["GCTGG", "TACGT"], motifCount=2, seqLen=20, seqCount=4)
     # s0 = dnaWithMotif(["TTTT"], motifCount=2, seqLen=20, seqCount=6)
-    x = matches(7, s0, testDNA, similarity=1)
+    x = matches(5, s0, testDNA, similarity=1)
     # print(s0)
     # s1 = s0[0]
     # s2 = s0[1]
@@ -313,8 +280,9 @@ def extract():
         for j in x:
             q = kmerConvolution(i, j, testDNA)
             _list.append(q)
-            q = freqToSeq(q, testDNA)
+            # q = freqToSeq(q, testDNA)
             # print(q)
+    # print(_list)
     x = groupReduce(_list, testDNA)
     print(x / np.max(x))
     x = freqToSeq(x, testDNA)
