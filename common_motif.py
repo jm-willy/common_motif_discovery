@@ -1,8 +1,10 @@
 import numpy as np
-from utils import freqToSeq, hitUp, kmersSetTuple, randomDNA, testDNA
+from utils import benchmark, dnaWithMotif, freqToSeq, hitUp, kmersSetTuple, testDNA
 
 
 def seqToFreq(kmer, alphabet):
+    if type(kmer) is not str:
+        raise ValueError("kmer must be a str")
     """
     Params:
     kmer: str
@@ -22,14 +24,116 @@ def seqToFreq(kmer, alphabet):
     return np.array(matrix)
 
 
-def freqNoise(kmerLen, sequence, alphabet):
+def kmerHits(kmerLen, sequence, alphabet):
+    """
+    kmer hits for a list/tuple of sequences
+
+    Returns:
+    dict: { 'kmers' : count } for each kmer of kmerLen in the input seq
+    """
+
+    result = {}
+    _len = 1 + len(sequence) - kmerLen
+    for i in range(_len):
+        slider = sequence[i : i + kmerLen]
+        hitUp(slider, result)
+    return result
+
+
+def pairKmers(seq1, seq2, alphabet, similarity=0.7):
+    """
+    Params:
+    similarity: fraction of letters shared to group together
+
+    Returns:
+    bool: whether seq1 and seq2 pair
+    """
+    similarity = len(seq1) * similarity
+    x = seqToFreq(seq1, alphabet)
+    y = seqToFreq(seq2, alphabet)
+    score = np.sum(x * y)
+    # if score < similarity:
+    #     x = seqToFreq(seq1[::-1], alphabet)
+    #     score = np.sum(x * y)
+    return score >= (similarity - 10**-6)
+
+
+def groupKmers(kmerLen, sequence, alphabet, similarity=0.7):
+    """
+    Params:
+    similarity: fraction of letters shared to group together
+    threshold: kmer fold enrichment as a fraction of the most fold-enriched  kmer (1.0) per seq
+
+    Returns:
+    dict , int: { str : { str : int } } , total hits
+    """
+    result = {}
+    hits = kmerHits(kmerLen, sequence, alphabet)
+    hits = hits, hits
+    kmersIter = kmersSetTuple(hits)
+    for i in kmersIter:
+        result.update({i: {}})
+
+    count = 0
+    for _dict in hits:
+        for i in tuple(_dict.keys()):
+            for j in kmersIter:
+                if j == i:
+                    continue
+                if pairKmers(i, j, alphabet, similarity):
+                    result[j].update({i: _dict[i]})
+                    count += 1
+
+    toDel = []
+    for _key in result:
+        if len(result[_key]) == 0:
+            toDel.append(_key)
+    for i in toDel:
+        del result[i]
+    return result
+
+
+def matches(kmerLen, sequences, alphabet, similarity=0.6):
+    if type(sequences) is not list and type(sequences) is not tuple:
+        raise ValueError("sequences type must be list[str]")
+
+    hitsList = []
+    kmersLists = []
+    for seq in sequences:
+        hits = kmerHits(kmerLen, seq, alphabet)
+        hitsList.append(hits)
+        kmersLists.append([i for i in tuple(hits.keys())])
+
+    commonKmers = []
+    currentIndex = 0
+    for i_list in kmersLists:
+        count = 0
+        for j_list in kmersLists:
+            if currentIndex == count:
+                count += 1
+                continue
+            else:
+                for i_kmer in i_list:
+                    for j_kmer in j_list:
+                        if pairKmers(i_kmer, j_kmer, alphabet, similarity):
+                            commonKmers += [i_kmer for i in range(hitsList[currentIndex][i_kmer])]
+                count += 1
+        currentIndex += 1
+
+    # count = 0
+    # score = count / len(sequences)
+
+    # result = {}
+    return commonKmers
+
+
+def letterFreqs(kmerLen, sequence, alphabet):
     """
     letter frequency for seq
 
     Returns:
     numpy.ndarray: positional frequency matrix
     """
-
     sliderLen = 1
     result = np.zeros((len(alphabet), sliderLen))
     _len = 1 + len(sequence) - sliderLen
@@ -38,67 +142,6 @@ def freqNoise(kmerLen, sequence, alphabet):
         result += seqToFreq(slider, alphabet)
     result = result / np.sum(result)
     result = np.concat([result for i in range(kmerLen)], axis=-1)
-    return result
-
-
-def kmerEnrichment(kmerLen, sequence, alphabet):
-    """
-    enrichment = enrichment / np.max(enrichment)
-    compared to background
-
-    Returns:
-    numpy.ndarray: of len(sequence)
-    """
-    e = 10**-6
-    enrichment = []
-    _len = 1 + len(sequence) - kmerLen
-    noise = freqNoise(kmerLen, sequence, alphabet)
-    for i in range(_len):
-        slider = sequence[i : i + kmerLen]
-        fold = seqToFreq(slider, alphabet) / (noise - e)
-        enrichment.append(np.sum(fold))
-    enrichment = enrichment / np.max(enrichment)
-    return enrichment
-
-
-def kmerHits(kmerLen, sequence, alphabet, threshold=0.51):
-    """
-    kmer hits for a single sequence above the enrichment threshold
-    compared to background positional frequency matrix
-
-    compute kmer enrichment assuming flat unifor distribution for length
-
-    Params:
-    threshold: fold enrichment as a fraction of the most fold-enriched kmer (1.0)
-
-    Returns:
-    dict: { 'kmers' : count } for each kmer of kmerLen in the input seq
-    """
-    _len = 1 + len(sequence) - kmerLen
-    enrichment = kmerEnrichment(kmerLen, sequence, alphabet)
-    e = 10**-6
-    result = {}
-    for i in range(_len):
-        slider = sequence[i : i + kmerLen]
-        if enrichment[i] >= (threshold - e):
-            hitUp(slider, result)
-    return result
-
-
-def seqsHits(kmerLen, sequences, alphabet, threshold=0.9):
-    """
-    kmer hits per sequence for several sequences
-
-    Params:
-    sequences: list/tuple of strings
-    threshold: kmer fold enrichment as a fraction of the most fold-enriched  kmer (1.0) per seq
-
-    Returns:
-    list: list of dict { 'kmers' : count } per input sequence
-    """
-    result = []
-    for i in sequences:
-        result.append(kmerHits(kmerLen, i, alphabet, threshold))
     return result
 
 
@@ -152,6 +195,14 @@ def kmerConv(x, y, alphabet):
 
 
 def groupReduce(freqs, alphabet):
+    if len(freqs) == 0:
+        raise ValueError("reduce() given freqs is empty")
+    if type(freqs[0]) is str:
+        _list = []
+        for i in freqs:
+            _list.append(seqToFreq(i, alphabet))
+        freqs = _list
+
     _mul = np.ones(freqs[0].shape)
     for i in freqs:
         _mul *= i
@@ -159,56 +210,6 @@ def groupReduce(freqs, alphabet):
     for i in freqs:
         _sum += i
     result = _mul + _sum
-    return result
-
-
-def pairKmers(seq1, seq2, alphabet, similarity=0.7):
-    """
-    Params:
-    similarity: fraction of letters shared to group together
-
-    Returns:
-    bool: whether seq1 and seq2 pair
-    """
-    similarity = len(seq1) * similarity
-    x = seqToFreq(seq1, alphabet)
-    y = seqToFreq(seq2, alphabet)
-    score = np.sum(x * y)
-    if score < similarity:
-        x = seqToFreq(seq1[::-1], alphabet)
-        score = np.sum(x * y)
-    return score >= similarity
-
-
-def groupKmers(kmerLen, sequences, alphabet, threshold=0.9, similarity=0.7):
-    """
-    Params:
-    similarity: fraction of letters shared to group together
-    threshold: kmer fold enrichment as a fraction of the most fold-enriched  kmer (1.0) per seq
-
-    Returns:
-    dict: { str : { str : int } }
-    """
-    seqsHitsIter = seqsHits(kmerLen, sequences, alphabet, threshold=threshold)
-    kmersIter = kmersSetTuple(seqsHitsIter)
-    result = {}
-    for i in kmersIter:
-        result.update({i: {}})
-
-    for _dict in seqsHitsIter:
-        for i in tuple(_dict.keys()):
-            for j in kmersIter:
-                if j == i:
-                    continue
-                if pairKmers(i, j, alphabet, similarity):
-                    result[j].update({i: _dict[i]})
-
-    toDel = []
-    for _key in result:
-        if len(result[_key]) == 0:
-            toDel.append(_key)
-    for i in toDel:
-        del result[i]
     return result
 
 
@@ -221,12 +222,11 @@ def motifGroup(kmerLen, sequences, alphabet, threshold=0.9, similarity=0.7):
     Returns:
     dict: { str : ndarray }
     """
-    g = groupKmers(kmerLen, sequences, alphabet, threshold=0.9, similarity=0.7)
+    g, c = groupKmers(kmerLen, sequences, alphabet, similarity=0.7)
     result = g
     for key_i in tuple(g.keys()):
         convs = []
-        kmers = tuple(g[key_i].keys())
-        for key_j in kmers:
+        for key_j in tuple(g[key_i].keys()):
             # x = kmerConv(_key, i, alphabet) * g[_key][i]
             # x = freqToSeq(x, alphabet)
             convs.append(kmerConv(key_i, key_j, alphabet) * g[key_i][key_j])
@@ -246,36 +246,24 @@ def motifForLen(kmerLen, sequences, alphabet, threshold=0.9, similarity=0.7):
     list: [kmers]
     """
 
-    "test more different motifs, however it should spot ACA and AGA"
-    "iterate while"
-    "groupReduce, get best matrix instead?"
-    "reduce until similarity is 1 to get the pure hits, should get 2 motifs aga and aca"
-    "apply group reduce only not kmer conv"
-    mg = motifGroup(kmerLen, sequences, alphabet, threshold=0.9, similarity=0.7)
-    groupKmers()
+    mg, c = motifGroup(kmerLen, sequences, alphabet, threshold=0.9, similarity=0.7)
+    # groupKmers()
     x = groupReduce(tuple(mg.values()), alphabet)
     return freqToSeq(x, alphabet)
 
 
 def growKmer():
     "grow kmers by similarity comparison in a func similar to kmerHit()"
-    "replace threshold for similarity"
+    "replace threshold for similarity, start from highest similarity go low"
+    "test more different motifs, however it should spot ACA and AGA"
+    "iterate while"
+    "groupReduce, get best matrix instead?"
+    "reduce until similarity is 1 to get the pure hits, should get 2 motifs aga and aca"
+    "apply group reduce only not kmer conv"
+    # _len = 1 + len(sequence) - kmerLen
+    #     for i in range(_len):
+    #         slider = sequence[i : i + kmerLen]
     return
-
-
-# def growKmer():
-#     "grow kmers by similarity comparison in a func similar to kmerHit()"
-#     "replace threshold for similarity"
-
-#     _len = 1 + len(sequence) - kmerLen
-#     enrichment = letterEnrichment(kmerLen, sequence, alphabet)
-#     e = 10**-6
-#     result = {}
-#     for i in range(_len):
-#         slider = sequence[i : i + kmerLen]
-#         if enrichment[i] >= (threshold - e):
-#             hitUp(slider, result)
-#     return result
 
 
 # s1 = "TTTTTACATTTTAGATTTTTT"
@@ -309,3 +297,39 @@ def growKmer():
 # # print(rs)
 # # print(np.sum(rs))
 # # print(freqToSeq(rs, testDNA))
+
+
+@benchmark
+def extract():
+    print("\n" * 2)
+    s0 = dnaWithMotif(["TACGT"], motifCount=2, seqLen=70, seqCount=4)
+    # s0 = dnaWithMotif(["TTTT"], motifCount=2, seqLen=20, seqCount=6)
+    x = matches(7, s0, testDNA, similarity=1)
+    # print(s0)
+    # s1 = s0[0]
+    # s2 = s0[1]
+    _list = []
+    for i in x:
+        for j in x:
+            q = kmerConvolution(i, j, testDNA)
+            _list.append(q)
+            q = freqToSeq(q, testDNA)
+            # print(q)
+    x = groupReduce(_list, testDNA)
+    print(x / np.max(x))
+    x = freqToSeq(x, testDNA)
+    print(x)
+    # x = matches(3, (x, x), testDNA, similarity=0.6)
+    # print(x)
+    # _list = []
+    # for i in x:
+    #     for j in x:
+    #         q = kmerConvolution(i, j, testDNA)
+    #         _list.append(q)
+    # x = groupReduce(_list, testDNA)
+    # x = freqToSeq(x, testDNA)
+    # print(x)
+    return
+
+
+extract()

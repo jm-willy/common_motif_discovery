@@ -71,3 +71,5 @@ doc/api/
 .flutter-plugins-dependencies
 
 /borrar
+*.pyx
+speed.py

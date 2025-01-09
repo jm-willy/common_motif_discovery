@@ -1,4 +1,5 @@
 import random as r
+import time
 
 import numpy as np
 
@@ -33,8 +34,29 @@ testRNA = alphabetRNA[1:]
 testProtein = alphabetProtein[1:]
 
 
-def normalize_to_0_1(matrix):
-    return (np.array(matrix) - np.min(matrix)) / (np.max(matrix) - np.min(matrix))
+def freqToSeq(freqMatrix, alphabet):
+    """
+    Convert a frequency matrix to a sequence string with ambiguity notation.
+
+    Parameters:
+    freqMatrix (np.ndarray): Matrix of symbol row frequencies per position
+    alphabet (list): Ordered alphabet corresponding to matrix rows
+
+    Returns:
+    str: Sequence with ambiguity notation using square brackets
+    """
+    freqMatrix = np.array(freqMatrix)
+    sequence = ""
+    for col in range(freqMatrix.shape[-1]):
+        freqs = freqMatrix[:, col]
+        max_freq = np.max(freqs)
+        max_indices = np.where(freqs == max_freq)[0]
+        pos_alphabet = [alphabet[i] for i in max_indices]
+        if len(pos_alphabet) == 1:
+            sequence += pos_alphabet[0]
+        else:
+            sequence += f"[{''.join(pos_alphabet)}]"
+    return sequence
 
 
 def randomDNA(length, GC=0.44):
@@ -50,7 +72,7 @@ def insertMotif(index, motif, seq):
 
 def dnaWithMotif(motifs, motifCount, seqLen, seqCount):
     if type(motifs) is not list and type(motifs) is not tuple:
-        raise ValueError("motifs type is list[str]")
+        raise ValueError("motifs type must be list[str]")
 
     result = []
     for i in range(seqCount):
@@ -79,26 +101,17 @@ def kmersSetTuple(hitDicts):
     return tuple(kmersIter)
 
 
-def freqToSeq(freqMatrix, alphabet):
-    """
-    Convert a frequency matrix to a sequence string with ambiguity notation.
+def benchmark(func):
+    loops = 1
 
-    Parameters:
-    freqMatrix (np.ndarray): Matrix of symbol row frequencies per position
-    alphabet (list): Ordered alphabet corresponding to matrix rows
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = None
+        for i in range(loops):
+            result = func(*args, **kwargs)
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Function '{func.__name__}' executed in {execution_time:.6f} seconds.")
+        return result
 
-    Returns:
-    str: Sequence with ambiguity notation using square brackets
-    """
-    freqMatrix = np.array(freqMatrix)
-    sequence = ""
-    for col in range(freqMatrix.shape[-1]):
-        freqs = freqMatrix[:, col]
-        max_freq = np.max(freqs)
-        max_indices = np.where(freqs == max_freq)[0]
-        pos_alphabet = [alphabet[i] for i in max_indices]
-        if len(pos_alphabet) == 1:
-            sequence += pos_alphabet[0]
-        else:
-            sequence += f"[{''.join(pos_alphabet)}]"
-    return sequence
+    return wrapper
