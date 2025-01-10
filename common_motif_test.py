@@ -3,8 +3,6 @@ import unittest
 from common_motif import *
 from utils import *
 
-from common_motif_discovery.utils import seqToFreq
-
 
 class TestDict(unittest.TestCase):
     def test_seqToFreq(self):
@@ -21,11 +19,11 @@ class TestDict(unittest.TestCase):
         return
 
     def test_pairKmers(self):
-        x = pairKmers("ACGTA", "ACGTA", alphabet=testDNA, similarity=1)
+        x = pairKmers("ACGTA", "ACGTA", similarity=1)
         self.assertTrue(x)
-        x = pairKmers("ACGTA", "ACGTT", alphabet=testDNA, similarity=1)
+        x = pairKmers("ACGTA", "ACGTT", similarity=1)
         self.assertTrue(not x)
-        x = pairKmers("AC", "AT", alphabet=testDNA, similarity=0.5)
+        x = pairKmers("AC", "AT", similarity=0.5)
         self.assertTrue(x)
         return
 

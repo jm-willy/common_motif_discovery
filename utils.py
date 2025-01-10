@@ -34,9 +34,50 @@ testRNA = alphabetRNA[1:]
 testProtein = alphabetProtein[1:]
 
 
+def benchmark(func):
+    loops = 1
+
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = None
+        for i in range(loops):
+            result = func(*args, **kwargs)
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Function '{func.__name__}' executed in {execution_time:.6f} seconds.")
+        return result
+
+    return wrapper
+
+
+def seqToFreq(sequence, alphabet):
+    """
+    convert sequence string to frequency matrix
+
+    Params:
+    kmer: str
+
+    Returns:
+    numpy.ndarray: positional frequency Matrix
+    """
+    if type(sequence) is not str:
+        raise ValueError("kmer must be a str")
+
+    matrix = []
+    for i in alphabet:
+        row = []
+        for j in sequence:
+            if i == j:
+                row.append(1)
+            else:
+                row.append(0)
+        matrix.append(row)
+    return np.array(matrix)
+
+
 def freqToSeq(freqMatrix, alphabet):
     """
-    Convert a frequency matrix to a sequence string with ambiguity notation.
+    convert a frequency matrix to a sequence string with ambiguity notation
 
     Parameters:
     freqMatrix (np.ndarray): Matrix of symbol row frequencies per position
@@ -71,6 +112,11 @@ def insertMotif(index, motif, seq):
 
 
 def dnaWithMotif(motifs, motifCount, seqLen, seqCount):
+    """
+    get random DNA sequences with randmly inserted motifs
+
+    Returns: list[str]
+    """
     if type(motifs) is not list and type(motifs) is not tuple:
         raise ValueError("motifs type must be list[str]")
 
@@ -91,49 +137,3 @@ def hitUp(kmerStr, hitsDict):
     except KeyError:
         hitsDict.update({kmerStr: 1})
     return hitsDict
-
-
-def kmersSetTuple(hitDicts):
-    kmersIter = set()
-    for _dict in hitDicts:
-        for i in tuple(_dict.keys()):
-            kmersIter.add(i)
-    return tuple(kmersIter)
-
-
-def benchmark(func):
-    loops = 1
-
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = None
-        for i in range(loops):
-            result = func(*args, **kwargs)
-        end_time = time.time()
-        execution_time = end_time - start_time
-        print(f"Function '{func.__name__}' executed in {execution_time:.6f} seconds.")
-        return result
-
-    return wrapper
-
-
-def seqToFreq(kmer, alphabet):
-    if type(kmer) is not str:
-        raise ValueError("kmer must be a str")
-    """
-    Params:
-    kmer: str
-
-    Returns:
-    numpy.ndarray: positional frequency Matrix
-    """
-    matrix = []
-    for i in alphabet:
-        row = []
-        for j in kmer:
-            if i == j:
-                row.append(1)
-            else:
-                row.append(0)
-        matrix.append(row)
-    return np.array(matrix)
