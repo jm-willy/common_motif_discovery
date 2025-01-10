@@ -1,27 +1,5 @@
 import numpy as np
-from utils import benchmark, dnaWithMotif, freqToSeq, hitUp, kmersSetTuple, testDNA
-
-
-def seqToFreq(kmer, alphabet):
-    if type(kmer) is not str:
-        raise ValueError("kmer must be a str")
-    """
-    Params:
-    kmer: str
-
-    Returns:
-    numpy.ndarray: positional frequency Matrix
-    """
-    matrix = []
-    for i in alphabet:
-        row = []
-        for j in kmer:
-            if i == j:
-                row.append(1)
-            else:
-                row.append(0)
-        matrix.append(row)
-    return np.array(matrix)
+from utils import benchmark, dnaWithMotif, freqToSeq, hitUp, kmersSetTuple, seqToFreq, testDNA
 
 
 def kmerHits(kmerLen, sequence):
@@ -50,15 +28,13 @@ def pairKmers(seq1, seq2, alphabet, similarity=0.7):
     Returns:
     bool: whether seq1 and seq2 pair
     """
-    _len = 0
-    similarity = len(seq1) * similarity
-    x = seqToFreq(seq1, alphabet)
-    y = seqToFreq(seq2, alphabet)
-    score = np.sum(x * y)
-    # if score < similarity:
-    #     x = seqToFreq(seq1[::-1], alphabet)
-    #     score = np.sum(x * y)
-    return score >= (similarity - 10**-6)
+    _len = len(seq1)
+    hits = 0
+    for i in range(_len):
+        if seq1[i] == seq2[i]:
+            hits += 1
+    similarity = (_len * similarity) - 10**-6
+    return hits >= similarity
 
 
 def groupKmers(kmerLen, sequence, alphabet, similarity=0.7):

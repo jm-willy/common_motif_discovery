@@ -3,6 +3,8 @@ import unittest
 from common_motif import *
 from utils import *
 
+from common_motif_discovery.utils import seqToFreq
+
 
 class TestDict(unittest.TestCase):
     def test_seqToFreq(self):

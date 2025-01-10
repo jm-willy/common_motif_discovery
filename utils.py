@@ -115,3 +115,25 @@ def benchmark(func):
         return result
 
     return wrapper
+
+
+def seqToFreq(kmer, alphabet):
+    if type(kmer) is not str:
+        raise ValueError("kmer must be a str")
+    """
+    Params:
+    kmer: str
+
+    Returns:
+    numpy.ndarray: positional frequency Matrix
+    """
+    matrix = []
+    for i in alphabet:
+        row = []
+        for j in kmer:
+            if i == j:
+                row.append(1)
+            else:
+                row.append(0)
+        matrix.append(row)
+    return np.array(matrix)
