@@ -59,6 +59,7 @@ def commonKmers(kmerLen, sequences, alphabet, similarity=0.6, occurrence=0.6):
         kmersLists.append(_kmers)
         seqCount += 1
 
+    occurrence -= 10**-6
     common = []
     iCount = 0
     for iList in kmersLists:
@@ -75,7 +76,7 @@ def commonKmers(kmerLen, sequences, alphabet, similarity=0.6, occurrence=0.6):
                     if pairKmers(iKmer, jKmer, similarity):
                         hits += 1
                 jCount += 1
-            if occurrence <= ((hits / seqCount) - 10**-6):
+            if occurrence <= (hits / seqCount):
                 for i in range(hitsList[iCount][iKmer]):
                     common.append(iKmer)
         iCount += 1
@@ -234,7 +235,7 @@ def extractFinal():
     # s0 = dnaWithMotif(["TTTT"], motifCount=2, seqLen=20, seqCount=6)
     s1 = "TTTTTTTTTTTGGGG"
     s2 = s1.replace("T", "A")
-    x = commonKmers(5, (s1, s2), testDNA, similarity=0.1, occurrence=0.1)
+    x = commonKmers(5, (s1, s2), testDNA, similarity=4 / 5, occurrence=0.1)
     print(x)
 
     # # print(s0)

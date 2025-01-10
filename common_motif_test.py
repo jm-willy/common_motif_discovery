@@ -51,7 +51,13 @@ class TestDict(unittest.TestCase):
         self.assertTrue(all(x))
         return
 
-    # def test_
+    def test_commonKmers(self):
+        s1 = "TTTTTTTTTTTGGGG"
+        s2 = s1.replace("T", "A")
+        x = commonKmers(5, (s1, s2), testDNA, similarity=4 / 5, occurrence=0.5)
+        self.assertTrue(x[0] == "TGGGG")
+        self.assertTrue(x[1] == "AGGGG")
+        return
 
 
 if __name__ == "__main__":
