@@ -24,7 +24,7 @@ def seqToFreq(kmer, alphabet):
     return np.array(matrix)
 
 
-def kmerHits(kmerLen, sequence, alphabet):
+def kmerHits(kmerLen, sequence):
     """
     kmer hits for a list/tuple of sequences
 
@@ -43,11 +43,14 @@ def kmerHits(kmerLen, sequence, alphabet):
 def pairKmers(seq1, seq2, alphabet, similarity=0.7):
     """
     Params:
+    seq1: str
+    seq2: str
     similarity: fraction of letters shared to group together
 
     Returns:
     bool: whether seq1 and seq2 pair
     """
+    _len = 0
     similarity = len(seq1) * similarity
     x = seqToFreq(seq1, alphabet)
     y = seqToFreq(seq2, alphabet)
@@ -67,22 +70,23 @@ def groupKmers(kmerLen, sequence, alphabet, similarity=0.7):
     Returns:
     dict , int: { str : { str : int } } , total hits
     """
-    result = {}
-    hits = kmerHits(kmerLen, sequence, alphabet)
+    hits = kmerHits(kmerLen, sequence)
     hits = hits, hits
-    kmersIter = kmersSetTuple(hits)
-    for i in kmersIter:
+    unique = kmersSetTuple(hits)
+
+    result = {}
+    for i in unique:
         result.update({i: {}})
 
-    count = 0
+    # count = 0
     for _dict in hits:
         for i in tuple(_dict.keys()):
-            for j in kmersIter:
+            for j in unique:
                 if j == i:
                     continue
                 if pairKmers(i, j, alphabet, similarity):
                     result[j].update({i: _dict[i]})
-                    count += 1
+                    # count += 1
 
     toDel = []
     for _key in result:
@@ -93,38 +97,85 @@ def groupKmers(kmerLen, sequence, alphabet, similarity=0.7):
     return result
 
 
-def matches(kmerLen, sequences, alphabet, similarity=0.6):
+def groupCommon(kmerLen, sequence, alphabet, similarity=0.7):
+    """
+    Params:
+    similarity: fraction of letters shared to group together
+    threshold: kmer fold enrichment as a fraction of the most fold-enriched  kmer (1.0) per seq
+
+    Returns:
+    dict , int: { str : { str : int } } , total hits
+    """
+
+    common = commonKmers(kmerLen, sequence, alphabet, similarity)
+    unique = set()
+    for _list in common:
+        unique.union(set(_list))
+    unique = tuple(unique)
+
+    result = {}
+    for kmer in unique:
+        result.update({kmer: []})
+
+    iCount = 0
+    for iList in common:
+        jCount = 0
+        for jList in common:
+            if iCount == jCount:
+                jCount += 1
+                continue
+            else:
+                iKmer = iList[iCount]
+                jKmer = jList[jCount]
+                if pairKmers(iKmer, jKmer, alphabet, similarity):
+                    result[iKmer].append(jKmer)
+                jCount += 1
+        iCount += 1
+
+    toDel = []
+    for _key in result:
+        if len(result[_key]) == 0:
+            toDel.append(_key)
+    for kmer in toDel:
+        del result[kmer]
+    return result
+
+
+def commonKmers(kmerLen, sequences, alphabet, similarity=0.6):
+    """
+    kmer common to sequences
+    """
     if type(sequences) is not list and type(sequences) is not tuple:
         raise ValueError("sequences type must be list[str]")
 
     hitsList = []
     kmersLists = []
     for seq in sequences:
-        hits = kmerHits(kmerLen, seq, alphabet)
+        hits = kmerHits(kmerLen, seq)
         hitsList.append(hits)
         kmersLists.append([i for i in tuple(hits.keys())])
 
-    commonKmers = []
-    currentIndex = 0
+    common = []
+    iCount = 0
     for i_list in kmersLists:
-        count = 0
+        jCount = 0
         for j_list in kmersLists:
-            if currentIndex == count:
-                count += 1
+            if iCount == jCount:
+                jCount += 1
                 continue
             else:
                 for i_kmer in i_list:
                     for j_kmer in j_list:
                         if pairKmers(i_kmer, j_kmer, alphabet, similarity):
-                            commonKmers += [i_kmer for i in range(hitsList[currentIndex][i_kmer])]
-                count += 1
-        currentIndex += 1
+                            common += [i_kmer for i in range(hitsList[iCount][i_kmer])]
+                jCount += 1
+        iCount += 1
 
     # count = 0
     # score = count / len(sequences)
 
     # result = {}
-    return commonKmers
+    return common
 
 
 def letterFreqs(kmerLen, sequence, alphabet):
@@ -157,7 +208,7 @@ def kmerConvolution(x, y, alphabet):
     np.ndarray: positional freq matrix
     """
     if len(x) != len(y):
-        raise ValueError("kmerPairAlign different x and y lengths")
+        raise ValueError("kmerConvolution() different x and y lengths")
     xFreq = seqToFreq(x, alphabet)
     zeros = np.zeros(xFreq.shape)
     kmerLen = xFreq.shape[-1]
@@ -194,7 +245,8 @@ def kmerConv(x, y, alphabet):
     return a if np.sum(a) >= np.sum(b) else b.T[::-1].T
 
 
-def groupReduce(freqs, alphabet):
+def reduceGroup(freqs, alphabet):
+    """replace with multiple seq align"""
     if len(freqs) == 0:
         raise ValueError("reduce() given freqs is empty")
     if type(freqs[0]) is str:
@@ -204,6 +256,7 @@ def groupReduce(freqs, alphabet):
         freqs = _list
 
     _mul = np.ones(freqs[0].shape)
+    ## very large (and small) numbers =  NaN error
     for i in freqs:
         _mul *= i
     _sum = np.zeros(freqs[0].shape)
@@ -213,43 +266,43 @@ def groupReduce(freqs, alphabet):
     return result
 
 
-def motifGroup(kmerLen, sequences, alphabet, threshold=0.9, similarity=0.7):
-    """
-    Params:
-    similarity: fraction of letters shared to group together
-    threshold: kmer fold enrichment as a fraction of the most fold-enriched  kmer (1.0) per seq
+# def motifGroup(kmerLen, sequences, alphabet, threshold=0.9, similarity=0.7):
+#     """
+#     Params:
+#     similarity: fraction of letters shared to group together
+#     threshold: kmer fold enrichment as a fraction of the most fold-enriched  kmer (1.0) per seq
 
-    Returns:
-    dict: { str : ndarray }
-    """
-    g, c = groupKmers(kmerLen, sequences, alphabet, similarity=0.7)
-    result = g
-    for key_i in tuple(g.keys()):
-        convs = []
-        for key_j in tuple(g[key_i].keys()):
-            # x = kmerConv(_key, i, alphabet) * g[_key][i]
-            # x = freqToSeq(x, alphabet)
-            convs.append(kmerConv(key_i, key_j, alphabet) * g[key_i][key_j])
-        multi = groupReduce(convs, alphabet)
-        # result[key_i] = freqToSeq(multi, alphabet)
-        result[key_i] = multi
-    return result
+#     Returns:
+#     dict: { str : ndarray }
+#     """
+#     g, c = groupKmers(kmerLen, sequences, alphabet, similarity=0.7)
+#     result = g
+#     for key_i in tuple(g.keys()):
+#         convs = []
+#         for key_j in tuple(g[key_i].keys()):
+#             # x = kmerConv(_key, i, alphabet) * g[_key][i]
+#             # x = freqToSeq(x, alphabet)
+#             convs.append(kmerConv(key_i, key_j, alphabet) * g[key_i][key_j])
+#         multi = reduceGroup(convs, alphabet)
+#         # result[key_i] = freqToSeq(multi, alphabet)
+#         result[key_i] = multi
+#     return result
 
 
-def motifForLen(kmerLen, sequences, alphabet, threshold=0.9, similarity=0.7):
-    """
-    Params:
-    similarity: fraction of letters shared to group together
-    threshold: kmer fold enrichment as a fraction of the most fold-enriched  kmer (1.0) per seq
+# def motifForLen(kmerLen, sequences, alphabet, threshold=0.9, similarity=0.7):
+#     """
+#     Params:
+#     similarity: fraction of letters shared to group together
+#     threshold: kmer fold enrichment as a fraction of the most fold-enriched  kmer (1.0) per seq
 
-    Returns:
-    list: [kmers]
-    """
+#     Returns:
+#     list: [kmers]
+#     """
 
-    mg, c = motifGroup(kmerLen, sequences, alphabet, threshold=0.9, similarity=0.7)
-    # groupKmers()
-    x = groupReduce(tuple(mg.values()), alphabet)
-    return freqToSeq(x, alphabet)
+#     mg, c = motifGroup(kmerLen, sequences, alphabet, threshold=0.9, similarity=0.7)
+#     # groupKmers()
+#     x = reduceGroup(tuple(mg.values()), alphabet)
+#     return freqToSeq(x, alphabet)
 
 
 def growKmer():
@@ -267,11 +320,11 @@ def growKmer():
 
 
 @benchmark
-def extract():
+def extractFinal():
     print("\n" * 2)
-    s0 = dnaWithMotif(["GCTGG", "TACGT"], motifCount=2, seqLen=20, seqCount=4)
+    s0 = dnaWithMotif(["GCTGG", "TACGT"], motifCount=2, seqLen=1000, seqCount=7)
     # s0 = dnaWithMotif(["TTTT"], motifCount=2, seqLen=20, seqCount=6)
-    x = matches(5, s0, testDNA, similarity=1)
+    x = commonKmers(5, s0, testDNA, similarity=1)
     # print(s0)
     # s1 = s0[0]
     # s2 = s0[1]
@@ -283,7 +336,7 @@ def extract():
             # q = freqToSeq(q, testDNA)
             # print(q)
     # print(_list)
-    x = groupReduce(_list, testDNA)
+    x = reduceGroup(_list, testDNA)
     print(x / np.max(x))
     x = freqToSeq(x, testDNA)
     print(x)
@@ -300,4 +353,4 @@ def extract():
     return
 
 
-extract()
+extractFinal()

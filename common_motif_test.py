@@ -28,11 +28,11 @@ class TestDict(unittest.TestCase):
         return
 
     def test_kmerHits(self):
-        x = kmerHits(5, "TTTTTACGTATTTTT", alphabet=testDNA)
+        x = kmerHits(5, "TTTTTACGTATTTTT")
         self.assertTrue(x["ACGTA"] == 1)
-        x = kmerHits(7, "TTTTTACGTATTTTT", alphabet=testDNA)
+        x = kmerHits(7, "TTTTTACGTATTTTT")
         self.assertTrue(x["TACGTAT"] == 1)
-        x = kmerHits(5, "TTTTTACGTATTTTT", testDNA)
+        x = kmerHits(5, "TTTTTACGTATTTTT")
         self.assertTrue(x["TTTTT"] == 2)
         return
 
@@ -50,6 +50,8 @@ class TestDict(unittest.TestCase):
         x = ["ACGTA" in i for i in x]
         self.assertTrue(all(x))
         return
+
+    # def test_
 
 
 if __name__ == "__main__":
