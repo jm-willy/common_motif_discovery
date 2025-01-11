@@ -44,23 +44,29 @@ def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
     alphabet: list[str]
 
     Returns:
-    list[str]: kmers common across sequences
+    dict: { 'kmer' : self count } identical, not similar, count
     """
     if type(sequences) is not list and type(sequences) is not tuple:
         raise ValueError("sequences type must be list[str]")
+    occurrence -= 10**-6
 
     hitsList = []
     kmersLists = []
     seqCount = 0
+    unique = set()
     for seq in sequences:
         hits = kmerHits(kmerLen, seq)
         hitsList.append(hits)
         _kmers = tuple(hits.keys())
         kmersLists.append(_kmers)
+        unique.update(_kmers)
         seqCount += 1
+    unique = tuple(unique)
 
-    occurrence -= 10**-6
-    common = []
+    common = {}
+    for kmer in unique:
+        common.update({kmer: 0})
+
     iCount = 0
     for iList in kmersLists:
         for iKmer in iList:
@@ -77,9 +83,15 @@ def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
                         hits += 1
                 jCount += 1
             if occurrence <= (hits / seqCount):
-                for i in range(hitsList[iCount][iKmer]):
-                    common.append(iKmer)
+                common[iKmer] += hitsList[iCount][iKmer]
         iCount += 1
+
+    toDel = []
+    for _key in common:
+        if common[_key] == 0:
+            toDel.append(_key)
+    for kmer in toDel:
+        del common[kmer]
     return common
 
 
@@ -93,10 +105,7 @@ def groupCommon(kmerLen, sequence, alphabet, similarity=0.7):
     """
 
     common = commonKmers(kmerLen, sequence, alphabet, similarity)
-    unique = set(common)
-    # for _list in common:
-    #     unique.union(set(_list))
-    # unique = tuple(unique)
+    unique = tuple(common.keys())
 
     result = {}
     for kmer in unique:
@@ -232,42 +241,13 @@ def growKmer():
 @benchmark
 def extractFinal():
     print("\n" * 2)
-    s0 = dnaWithMotif(["GCTGG", "TACGT"], motifCount=2, seqLen=280, seqCount=7)
+    s0 = dnaWithMotif(["GCTGG", "TACGT"], motifCount=2, seqLen=11, seqCount=7)
     # s0 = dnaWithMotif(["TTTT"], motifCount=2, seqLen=20, seqCount=6)
     # s1 = "CCCCTTTTTTTTTTTGGGG"
     # s2 = s1.replace("T", "A")
     # x = commonKmers(5, (s1, s2), similarity=4 / 5, occurrence=0.5)
     x = commonKmers(5, (s0), similarity=4 / 5, occurrence=0.6)
-    # x = groupCommon(
-    #     5,
-    # )
-    # print(x)
-
-    # # print(s0)
-    # # s1 = s0[0]
-    # # s2 = s0[1]
-    # _list = []
-    # for i in x:
-    #     for j in x:
-    #         q = kmerConvolution(i, j, testDNA)
-    #         _list.append(q)
-    #         # q = freqToSeq(q, testDNA)
-    #         # print(q)
-    # # print(_list)
-    # x = reduceGroup(_list, testDNA)
-    # print(x / np.max(x))
-    # x = freqToSeq(x, testDNA)
-    # print(x)
-    # # x = matches(3, (x, x), testDNA, similarity=0.6)
-    # # print(x)
-    # # _list = []
-    # # for i in x:
-    # #     for j in x:
-    # #         q = kmerConvolution(i, j, testDNA)
-    # #         _list.append(q)
-    # # x = groupReduce(_list, testDNA)
-    # # x = freqToSeq(x, testDNA)
-    # # print(x)
+    print(x)
     return
 
 
