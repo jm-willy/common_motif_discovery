@@ -17,8 +17,10 @@ def kmerHits(kmerLen, sequence):
     return result
 
 
-def pairKmers(seq1, seq2, similarity=0.7):
+def pairKmers(seq1, seq2, similarity=0.6):
     """
+    forward orientation similarity of seq1 and seq2
+
     Params:
     seq1: str
     seq2: str
@@ -38,13 +40,15 @@ def pairKmers(seq1, seq2, similarity=0.7):
 
 def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
     """
+    common kmers across input sequences
+
     Params:
     similarity: fraction of letters shared to be regarded as same kmer
     occurrence: fraction of input sequences in which similar kmers should be found
     alphabet: list[str]
 
     Returns:
-    dict: { 'kmer' : self count } identical, not similar, count
+    dict: { kmer : self count } identical, not similar, count
     """
     if type(sequences) is not list and type(sequences) is not tuple:
         raise ValueError("sequences type must be list[str]")
@@ -77,8 +81,6 @@ def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
                     jCount += 1
                     continue
                 for jKmer in jList:
-                    if "GG" in iKmer and "GG" in jKmer:
-                        pass  ########### debug
                     if pairKmers(iKmer, jKmer, similarity):
                         hits += 1
                 jCount += 1
@@ -95,36 +97,28 @@ def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
     return common
 
 
-def groupCommon(kmerLen, sequence, alphabet, similarity=0.7):
+def commonGroups(kmerLen, sequences, similarity=0.7, occurrence=0.6):
     """
+    common kmers grouped by similarity
+
     Params:
     similarity: fraction of letters shared to group together
 
     Returns:
-    dict , int: { str : { str : int } } , total hits
+    dict , dict: { kmer : similar kmers } , { kmer : count }
     """
-
-    common = commonKmers(kmerLen, sequence, alphabet, similarity)
+    common = commonKmers(kmerLen, sequences, similarity, occurrence)
     unique = tuple(common.keys())
-
     result = {}
     for kmer in unique:
-        result.update({kmer: []})
+        result.update({kmer: set()})
 
-    iCount = 0
-    for iList in common:
-        jCount = 0
-        for jList in common:
-            if iCount == jCount:
-                jCount += 1
+    for i in unique:
+        for j in unique:
+            if i == j:
                 continue
-            else:
-                iKmer = iList[iCount]
-                jKmer = jList[jCount]
-                if pairKmers(iKmer, jKmer, alphabet, similarity):
-                    result[iKmer].append(jKmer)
-                jCount += 1
-        iCount += 1
+            if pairKmers(i, j, similarity):
+                result[i].add(j)
 
     toDel = []
     for _key in result:
@@ -132,6 +126,27 @@ def groupCommon(kmerLen, sequence, alphabet, similarity=0.7):
             toDel.append(_key)
     for kmer in toDel:
         del result[kmer]
+    return result, common
+
+
+def reduceGroup(kmerLen, sequences, alphabet, similarity=0.7, occurrence=0.6):
+    """
+    positional frequency for each kmer group
+
+    Returns:
+    dict: { kmer : nd.array }
+    """
+    groups, kmerCount = commonGroups(kmerLen, sequences, similarity, occurrence)
+    result = {}
+    unique = tuple(groups.keys())
+
+    for _key in unique:
+        freq = np.zeros((len(alphabet), kmerLen))
+        for _similar in tuple(groups[_key]):
+            freq += kmerCount[_similar] * seqToFreq(_similar, alphabet)
+
+        freq += kmerCount[_key] * seqToFreq(_key, alphabet)
+        result.update({_key: freq})
     return result
 
 
@@ -202,27 +217,6 @@ def kmerConv(x, y, alphabet):
     return a if np.sum(a) >= np.sum(b) else b.T[::-1].T
 
 
-def reduceGroup(freqs, alphabet):
-    """replace with multiple seq align"""
-    if len(freqs) == 0:
-        raise ValueError("reduce() given freqs is empty")
-    if type(freqs[0]) is str:
-        _list = []
-        for i in freqs:
-            _list.append(seqToFreq(i, alphabet))
-        freqs = _list
-
-    _mul = np.ones(freqs[0].shape)
-    ## very large (and small) numbers =  NaN error
-    for i in freqs:
-        _mul *= i
-    _sum = np.zeros(freqs[0].shape)
-    for i in freqs:
-        _sum += i
-    result = _mul + _sum
-    return result
-
-
 def growKmer():
     "grow kmers by similarity comparison in a func similar to kmerHit()"
     "replace threshold for similarity, start from highest similarity go low"
@@ -241,13 +235,21 @@ def growKmer():
 @benchmark
 def extractFinal():
     print("\n" * 2)
-    s0 = dnaWithMotif(["GCTGG", "TACGT"], motifCount=2, seqLen=11, seqCount=7)
+    s0 = dnaWithMotif(["GCTGG", "TACGT"], motifCount=2, seqLen=12, seqCount=7)
+    for i in s0:
+        print(i)
     # s0 = dnaWithMotif(["TTTT"], motifCount=2, seqLen=20, seqCount=6)
     # s1 = "CCCCTTTTTTTTTTTGGGG"
     # s2 = s1.replace("T", "A")
     # x = commonKmers(5, (s1, s2), similarity=4 / 5, occurrence=0.5)
-    x = commonKmers(5, (s0), similarity=4 / 5, occurrence=0.6)
-    print(x)
+    # x = commonKmers(5, s0, similarity=4 / 5, occurrence=0.6)
+    # x = commonGroups(5, s0, similarity=4 / 5, occurrence=0.6)
+    # print(x[0])
+    # print()
+    x = reduceGroup(5, s0, testDNA, similarity=4 / 5, occurrence=0.6)
+    for i in x:
+        print(i, freqToSeq(x[i], testDNA))
+        print(x[i])
     return
 
 
