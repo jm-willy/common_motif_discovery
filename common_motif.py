@@ -32,7 +32,7 @@ def pairKmers(seq1, seq2, similarity=0.7):
     for i in range(_len):
         if seq1[i] == seq2[i]:
             hits += 1
-    similarity = (2 * _len * similarity) - 10**-6
+    similarity = (_len * similarity) - 10**-6
     return hits >= similarity
 
 

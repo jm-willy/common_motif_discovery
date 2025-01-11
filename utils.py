@@ -150,4 +150,4 @@ def getComplementaryDNA(sequence):
             result.append("C")
         elif i == "T":
             result.append("A")
-    return result
+    return "".join(result)

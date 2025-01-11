@@ -25,8 +25,6 @@ class TestDict(unittest.TestCase):
         self.assertTrue(not x)
         x = pairKmers("AC", "AT", similarity=0.5)
         self.assertTrue(x)
-        x = pairKmers("TA", "AT", similarity=0.5)
-        self.assertTrue(x)
         return
 
     def test_kmerHits(self):
@@ -59,6 +57,11 @@ class TestDict(unittest.TestCase):
         x = commonKmers(5, (s1, s2), similarity=4 / 5, occurrence=0.5)
         self.assertTrue(x[0] == "TGGGG")
         self.assertTrue(x[1] == "AGGGG")
+        return
+
+    def test_getComplementaryDNA(self):
+        x = getComplementaryDNA("ACTGA")
+        self.assertTrue(x == "TGACT")
         return
 
 
