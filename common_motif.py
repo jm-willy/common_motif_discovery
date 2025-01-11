@@ -115,8 +115,6 @@ def commonGroups(kmerLen, sequences, similarity=0.7, occurrence=0.6):
 
     for i in unique:
         for j in unique:
-            if i == j:
-                continue
             if pairKmers(i, j, similarity):
                 result[i].add(j)
 
@@ -125,6 +123,8 @@ def commonGroups(kmerLen, sequences, similarity=0.7, occurrence=0.6):
         if len(result[_key]) == 0:
             toDel.append(_key)
     for kmer in toDel:
+        if kmer == "TACGT":
+            pass  ########################
         del result[kmer]
     return result, common
 
@@ -235,21 +235,18 @@ def growKmer():
 @benchmark
 def extractFinal():
     print("\n" * 2)
-    s0 = dnaWithMotif(["GCTGG", "TACGT"], motifCount=2, seqLen=12, seqCount=7)
-    for i in s0:
-        print(i)
-    # s0 = dnaWithMotif(["TTTT"], motifCount=2, seqLen=20, seqCount=6)
-    # s1 = "CCCCTTTTTTTTTTTGGGG"
-    # s2 = s1.replace("T", "A")
-    # x = commonKmers(5, (s1, s2), similarity=4 / 5, occurrence=0.5)
-    # x = commonKmers(5, s0, similarity=4 / 5, occurrence=0.6)
+    s0 = dnaWithMotif(["GCTGG", "TACGT"], motifCount=2, seqLen=10, seqCount=7)
+    # for i in s0:
+    #     print(i)
     # x = commonGroups(5, s0, similarity=4 / 5, occurrence=0.6)
-    # print(x[0])
+    # print("TACGT in", "TACGT" in x[0].keys(), "TACGT" in x[1].keys())
+    # print("GCTGG in", "GCTGG" in x[0].keys(), "GCTGG" in x[1].keys())
     # print()
     x = reduceGroup(5, s0, testDNA, similarity=4 / 5, occurrence=0.6)
     for i in x:
         print(i, freqToSeq(x[i], testDNA))
         print(x[i])
+        print()
     return
 
 

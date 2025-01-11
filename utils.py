@@ -121,7 +121,8 @@ def insertMotif(index, motif, seq):
 
 def dnaWithMotif(motifs, motifCount, seqLen, seqCount):
     """
-    get random DNA sequences with randmly inserted motifs
+    get random DNA sequences with randmly inserted motifs.
+    For more than 1 motifs, motifs may randomly replace other motifs
 
     Returns: list[str]
     """
