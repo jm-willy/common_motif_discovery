@@ -32,11 +32,11 @@ def pairKmers(seq1, seq2, similarity=0.7):
     for i in range(_len):
         if seq1[i] == seq2[i]:
             hits += 1
-    similarity = (_len * similarity) - 10**-6
+    similarity = (2 * _len * similarity) - 10**-6
     return hits >= similarity
 
 
-def commonKmers(kmerLen, sequences, alphabet, similarity=0.6, occurrence=0.6):
+def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
     """
     Params:
     similarity: fraction of letters shared to be regarded as same kmer
@@ -222,6 +222,7 @@ def growKmer():
     "groupReduce, get best matrix instead?"
     "reduce until similarity is 1 to get the pure hits, should get 2 motifs aga and aca"
     "apply group reduce only not kmer conv"
+    "reverse input sequences?"
     # _len = 1 + len(sequence) - kmerLen
     #     for i in range(_len):
     #         slider = sequence[i : i + kmerLen]
@@ -231,12 +232,16 @@ def growKmer():
 @benchmark
 def extractFinal():
     print("\n" * 2)
-    s0 = dnaWithMotif(["GCTGG", "TACGT"], motifCount=2, seqLen=12, seqCount=2)
+    s0 = dnaWithMotif(["GCTGG", "TACGT"], motifCount=2, seqLen=280, seqCount=7)
     # s0 = dnaWithMotif(["TTTT"], motifCount=2, seqLen=20, seqCount=6)
-    s1 = "TTTTTTTTTTTGGGG"
-    s2 = s1.replace("T", "A")
-    x = commonKmers(5, (s1, s2), testDNA, similarity=4 / 5, occurrence=0.1)
-    print(x)
+    # s1 = "CCCCTTTTTTTTTTTGGGG"
+    # s2 = s1.replace("T", "A")
+    # x = commonKmers(5, (s1, s2), similarity=4 / 5, occurrence=0.5)
+    x = commonKmers(5, (s0), similarity=4 / 5, occurrence=0.6)
+    # x = groupCommon(
+    #     5,
+    # )
+    # print(x)
 
     # # print(s0)
     # # s1 = s0[0]

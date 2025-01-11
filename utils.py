@@ -100,6 +100,14 @@ def freqToSeq(freqMatrix, alphabet):
     return sequence
 
 
+def hitUp(kmerStr, hitsDict):
+    try:
+        hitsDict[kmerStr] += 1
+    except KeyError:
+        hitsDict.update({kmerStr: 1})
+    return hitsDict
+
+
 def randomDNA(length, GC=0.44):
     gc = GC / 2
     at = (1 - GC) / 2
@@ -131,9 +139,15 @@ def dnaWithMotif(motifs, motifCount, seqLen, seqCount):
     return result
 
 
-def hitUp(kmerStr, hitsDict):
-    try:
-        hitsDict[kmerStr] += 1
-    except KeyError:
-        hitsDict.update({kmerStr: 1})
-    return hitsDict
+def getComplementaryDNA(sequence):
+    result = []
+    for i in sequence:
+        if i == "A":
+            result.append("T")
+        elif i == "C":
+            result.append("G")
+        elif i == "G":
+            result.append("C")
+        elif i == "T":
+            result.append("A")
+    return result

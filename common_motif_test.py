@@ -25,6 +25,8 @@ class TestDict(unittest.TestCase):
         self.assertTrue(not x)
         x = pairKmers("AC", "AT", similarity=0.5)
         self.assertTrue(x)
+        x = pairKmers("TA", "AT", similarity=0.5)
+        self.assertTrue(x)
         return
 
     def test_kmerHits(self):
@@ -52,9 +54,9 @@ class TestDict(unittest.TestCase):
         return
 
     def test_commonKmers(self):
-        s1 = "TTTTTTTTTTTGGGG"
+        s1 = "TTTTTGGGG"
         s2 = s1.replace("T", "A")
-        x = commonKmers(5, (s1, s2), testDNA, similarity=4 / 5, occurrence=0.5)
+        x = commonKmers(5, (s1, s2), similarity=4 / 5, occurrence=0.5)
         self.assertTrue(x[0] == "TGGGG")
         self.assertTrue(x[1] == "AGGGG")
         return
