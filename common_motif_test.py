@@ -19,11 +19,11 @@ class TestDict(unittest.TestCase):
         return
 
     def test_pairKmers(self):
-        x = pairKmers("ACGTA", "ACGTA", similarity=1)
+        x = pairNucleicKmers("ACGTA", "ACGTA", similarity=1)
         self.assertTrue(x)
-        x = pairKmers("ACGTA", "ACGTT", similarity=1)
+        x = pairNucleicKmers("ACGTA", "ACGTT", similarity=1)
         self.assertTrue(not x)
-        x = pairKmers("AC", "AT", similarity=0.5)
+        x = pairNucleicKmers("AC", "AT", similarity=0.5)
         self.assertTrue(x)
         return
 
@@ -60,7 +60,7 @@ class TestDict(unittest.TestCase):
         return
 
     def test_getComplementaryDNA(self):
-        x = getComplementaryDNA("ACTGA")
+        x = getComplementary("ACTGA")
         self.assertTrue(x == "TGACT")
         return
 

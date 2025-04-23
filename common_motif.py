@@ -1,10 +1,11 @@
 import numpy as np
-from utils import benchmark, dnaWithMotif, freqToSeq, hitUp, seqToFreq, testDNA
+
+from utils import benchmark, dnaWithMotif, freqToSeq, getAll, hitUp, isProtein, seqToFreq, testDNA
 
 
 def kmerHits(kmerLen, sequence):
     """
-    kmer hits for a list/tuple of sequences
+    kmer hits for a of sequence
 
     Returns:
     dict: { 'kmer' : count } for each kmer of kmerLen in the input seq
@@ -17,9 +18,9 @@ def kmerHits(kmerLen, sequence):
     return result
 
 
-def pairKmers(seq1, seq2, similarity=0.6):
+def pairAminoAcidKmers(seq1, seq2, similarity=0.6):
     """
-    forward orientation similarity of seq1 and seq2
+    similarity of seq1 and seq2
 
     Params:
     seq1: str
@@ -31,11 +32,37 @@ def pairKmers(seq1, seq2, similarity=0.6):
     """
     _len = len(seq1)
     hits = 0
-    for i in range(_len):
-        if seq1[i] == seq2[i]:
-            hits += 1
-    similarity = (_len * similarity) - 10**-6
-    return hits >= similarity
+    for i in (seq1, seq1[::-1]):
+        for j in range(_len):
+            if i[j] == seq2[j]:
+                hits += 1
+        similarity = (_len * similarity) - 10**-6
+        if hits >= similarity:
+            return True
+    return False
+
+
+def pairNucleicKmers(seq1, seq2, similarity=0.6):
+    """
+    similarity of seq1 and seq2
+
+    Params:
+    seq1: str
+    seq2: str
+    similarity: fraction of letters shared relative to length
+
+    Returns:
+    bool: whether seq1 and seq2 pair
+    """
+    _len = len(seq1)
+    hits = 0
+    for i in tuple(getAll(seq1).values()):
+        for j in range(_len):
+            if i[j] == seq2[j]:
+                hits += 1
+        if hits >= similarity:
+            return True
+    return False
 
 
 def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
@@ -70,6 +97,15 @@ def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
     common = {}
     for kmer in unique:
         common.update({kmer: 0})
+
+    pairKmers = None
+    isProteinBool = isProtein(sequences[0])
+    if isProteinBool:
+        pairKmers = pairAminoAcidKmers
+    elif not isProteinBool:
+        pairKmers = pairNucleicKmers
+    else:
+        raise ValueError("isProteinBool must be True or False")
 
     iCount = 0
     for iList in kmersLists:
@@ -113,6 +149,15 @@ def commonGroups(kmerLen, sequences, similarity=0.7, occurrence=0.6):
     for kmer in unique:
         result.update({kmer: set()})
 
+    pairKmers = None
+    isProteinBool = isProtein(sequences[0]) and isProtein(sequences[-1])
+    if isProteinBool:
+        pairKmers = pairAminoAcidKmers
+    elif not isProteinBool:
+        pairKmers = pairNucleicKmers
+    else:
+        raise ValueError("isProteinBool must be True or False")
+
     for i in unique:
         for j in unique:
             if pairKmers(i, j, similarity):
@@ -123,8 +168,6 @@ def commonGroups(kmerLen, sequences, similarity=0.7, occurrence=0.6):
         if len(result[_key]) == 0:
             toDel.append(_key)
     for kmer in toDel:
-        if kmer == "TACGT":
-            pass  ########################
         del result[kmer]
     return result, common
 
@@ -172,9 +215,6 @@ def kmerConvolution(x, y, alphabet):
     """
     no-gap align 2 same length kmers seqs through convolution
     x is expanded, while y is slided over x like a convolutional kernel
-
-    Params:
-    op: sum or dot the freq matrices
 
     Returns:
     np.ndarray: positional freq matrix

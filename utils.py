@@ -1,5 +1,7 @@
 import random as r
 import time
+from encodings.punycode import T
+from unittest import result
 
 import numpy as np
 
@@ -140,7 +142,7 @@ def dnaWithMotif(motifs, motifCount, seqLen, seqCount):
     return result
 
 
-def getComplementaryDNA(sequence):
+def getComplementary(sequence):
     result = []
     for i in sequence:
         if i == "A":
@@ -151,4 +153,31 @@ def getComplementaryDNA(sequence):
             result.append("C")
         elif i == "T":
             result.append("A")
+        elif i == "U":
+            result.append("A")
     return "".join(result)
+
+
+def getAll(sequence):
+    complementary = getComplementary(sequence)
+    return {
+        "input": sequence,
+        "reverse": sequence[::-1],
+        "complementary": complementary,
+        "reverse_complementary": complementary[::-1],
+    }
+
+
+def isProtein(sequence):
+    """
+    Will fail to tell apart proteins whose
+    only amino acids are "A", "C", "G", "T"
+    """
+    if "U" in sequence:
+        return False
+
+    unique = tuple(set(alphabetProtein) - set(alphabetDNA))
+    for i in unique:
+        if i in sequence:
+            return True
+    return False
