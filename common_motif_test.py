@@ -18,6 +18,13 @@ class TestDict(unittest.TestCase):
         self.assertTrue(x == "ACGTA")
         return
 
+    def test_pairAminoAcidKmers(self):
+        x = pairNucleicKmers("DEVD", "DEVD", similarity=1)
+        self.assertTrue(x)
+        x = pairNucleicKmers("YGQW", "YGGF", similarity=1)
+        self.assertTrue(not x)
+        return
+
     def test_pairNucleicKmers(self):
         x = pairNucleicKmers("ACGTA", "ACGTA", similarity=1)
         self.assertTrue(x)
