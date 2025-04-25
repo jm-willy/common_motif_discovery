@@ -65,6 +65,20 @@ def pairNucleicKmers(seq1, seq2, similarity=0.6):
     return False
 
 
+def getPairKmers(sequences):
+    pairKmers = None
+    isProteinBool = isProtein(sequences[0])
+    if isProteinBool:
+        pairKmers = pairAminoAcidKmers
+    elif not isProteinBool:
+        pairKmers = pairNucleicKmers
+    elif isProteinBool is None:
+        raise ValueError("isProteinBool must be True or False")
+    else:
+        raise ValueError("isProteinBool must be True or False")
+    return pairKmers
+
+
 def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
     """
     common kmers across input sequences
@@ -98,14 +112,7 @@ def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
     for kmer in unique:
         common.update({kmer: 0})
 
-    pairKmers = None
-    isProteinBool = isProtein(sequences[0])
-    if isProteinBool:
-        pairKmers = pairAminoAcidKmers
-    elif not isProteinBool:
-        pairKmers = pairNucleicKmers
-    else:
-        raise ValueError("isProteinBool must be True or False")
+    pairKmers = getPairKmers(sequences)
 
     iCount = 0
     for iList in kmersLists:
@@ -149,14 +156,7 @@ def commonGroups(kmerLen, sequences, similarity=0.7, occurrence=0.6):
     for kmer in unique:
         result.update({kmer: set()})
 
-    pairKmers = None
-    isProteinBool = isProtein(sequences[0]) and isProtein(sequences[-1])
-    if isProteinBool:
-        pairKmers = pairAminoAcidKmers
-    elif not isProteinBool:
-        pairKmers = pairNucleicKmers
-    else:
-        raise ValueError("isProteinBool must be True or False")
+    pairKmers = getPairKmers(sequences)
 
     for i in unique:
         for j in unique:
