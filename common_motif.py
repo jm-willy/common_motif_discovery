@@ -65,7 +65,7 @@ def pairNucleicKmers(seq1, seq2, similarity=0.6):
     return False
 
 
-def getPairKmers(sequences):
+def getPairKmersFunc(sequences):
     pairKmers = None
     isProteinBool = isProtein(sequences[0])
     if isProteinBool:
@@ -112,7 +112,7 @@ def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
     for kmer in unique:
         common.update({kmer: 0})
 
-    pairKmers = getPairKmers(sequences)
+    pairKmers = getPairKmersFunc(sequences)
 
     iCount = 0
     for iList in kmersLists:
@@ -140,15 +140,15 @@ def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
     return common
 
 
-def commonGroups(kmerLen, sequences, similarity=0.7, occurrence=0.6):
+def groupKmers(kmerLen, sequences, similarity=0.7, occurrence=0.6):
     """
-    common kmers grouped by similarity
+    kmers grouped by similarity
 
-    Params:
-    similarity: fraction of letters shared to group together
+     Params:
+     similarity: fraction of letters shared to group together
 
-    Returns:
-    dict , dict: { kmer : similar kmers } , { kmer : count }
+     Returns:
+     { kmer : similar kmers } , { kmer : count }
     """
     common = commonKmers(kmerLen, sequences, similarity, occurrence)
     unique = tuple(common.keys())
@@ -156,7 +156,7 @@ def commonGroups(kmerLen, sequences, similarity=0.7, occurrence=0.6):
     for kmer in unique:
         result.update({kmer: set()})
 
-    pairKmers = getPairKmers(sequences)
+    pairKmers = getPairKmersFunc(sequences)
 
     for i in unique:
         for j in unique:
@@ -179,7 +179,7 @@ def reduceGroup(kmerLen, sequences, alphabet, similarity=0.7, occurrence=0.6):
     Returns:
     dict: { kmer : nd.array }
     """
-    groups, kmerCount = commonGroups(kmerLen, sequences, similarity, occurrence)
+    groups, kmerCount = groupKmers(kmerLen, sequences, similarity, occurrence)
     result = {}
     unique = tuple(groups.keys())
 
