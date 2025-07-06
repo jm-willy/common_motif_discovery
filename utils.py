@@ -1,9 +1,9 @@
 import random as r
 import time
-from encodings.punycode import T
-from unittest import result
+from typing import Any, Callable, Dict, List
 
 import numpy as np
+from numpy.typing import NDArray
 
 alphabetDNA = ["-", "A", "C", "G", "T"]
 alphabetRNA = ["-", "A", "C", "G", "T", "U"]
@@ -36,14 +36,14 @@ testRNA = alphabetRNA[1:]
 testProtein = alphabetProtein[1:]
 
 
-def benchmark(func):
+def benchmark(func: Callable[[Any, Any], Any]):
     loops = 1
 
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         start_time = time.time()
-        result = None
+        result: Any = func(*args, **kwargs)
         for i in range(loops):
-            result = func(*args, **kwargs)
+            func(*args, **kwargs)
         end_time = time.time()
         execution_time = end_time - start_time
         print(f"Function '{func.__name__}' executed in {execution_time:.6f} seconds.")
@@ -52,7 +52,7 @@ def benchmark(func):
     return wrapper
 
 
-def seqToFreq(sequence, alphabet):
+def seqToFreq(sequence: str, alphabet: List[str]) -> NDArray[np.float64]:
     """
     convert sequence string to frequency matrix
 
@@ -65,9 +65,9 @@ def seqToFreq(sequence, alphabet):
     if type(sequence) is not str:
         raise ValueError("kmer must be a str")
 
-    matrix = []
+    matrix: List[List[float]] = []
     for i in alphabet:
-        row = []
+        row: List[float] = []
         for j in sequence:
             if i == j:
                 row.append(1)
@@ -77,7 +77,7 @@ def seqToFreq(sequence, alphabet):
     return np.array(matrix)
 
 
-def freqToSeq(freqMatrix, alphabet):
+def freqToSeq(frequencyMatrix: List[List[float]], alphabet: str) -> str:
     """
     convert a frequency matrix to a sequence string with ambiguity notation
 
@@ -88,7 +88,7 @@ def freqToSeq(freqMatrix, alphabet):
     Returns:
     str: Sequence with ambiguity notation using square brackets
     """
-    freqMatrix = np.array(freqMatrix)
+    freqMatrix: NDArray[np.float64] = np.array(frequencyMatrix)
     sequence = ""
     for col in range(freqMatrix.shape[-1]):
         freqs = freqMatrix[:, col]
@@ -102,7 +102,7 @@ def freqToSeq(freqMatrix, alphabet):
     return sequence
 
 
-def hitUp(kmerStr, hitsDict):
+def hitUp(kmerStr: str, hitsDict: Dict[str, int]):
     try:
         hitsDict[kmerStr] += 1
     except KeyError:
@@ -110,28 +110,26 @@ def hitUp(kmerStr, hitsDict):
     return hitsDict
 
 
-def randomDNA(length, GC=0.44):
+def randomDNA(length: int, GC: float = 0.44):
     gc = GC / 2
     at = (1 - GC) / 2
     p = [at, gc, gc, at]
     return "".join(np.random.choice(testDNA, size=length, p=p))
 
 
-def insertMotif(index, motif, seq):
+def insertMotif(index: int, motif: str, seq: str):
     return seq[:index] + motif + seq[index:]
 
 
-def dnaWithMotif(motifs, motifCount, seqLen, seqCount):
+def dnaWithMotif(motifs: str, motifCount: int, seqLen: int, seqCount: int) -> List[str]:
     """
     get random DNA sequences with randmly inserted motifs.
     For more than 1 motifs, motifs may randomly replace other motifs
 
-    Returns: list[str]
+    Returns: seqCount list[str] motifs randomly inserted
     """
-    if type(motifs) is not list and type(motifs) is not tuple:
-        raise ValueError("motifs type must be list[str]")
 
-    result = []
+    result: List[str] = []
     for i in range(seqCount):
         seq = randomDNA(seqLen)
         for j in motifs:
@@ -142,8 +140,8 @@ def dnaWithMotif(motifs, motifCount, seqLen, seqCount):
     return result
 
 
-def getComplementary(sequence):
-    result = []
+def getComplementary(sequence: str) -> str:
+    result: List[str] = []
     for i in sequence:
         if i == "A":
             result.append("T")
@@ -158,7 +156,7 @@ def getComplementary(sequence):
     return "".join(result)
 
 
-def getAll(sequence):
+def getAll(sequence: str) -> Dict[str, str]:
     complementary = getComplementary(sequence)
     return {
         "input": sequence,
@@ -168,7 +166,7 @@ def getAll(sequence):
     }
 
 
-def isProtein(sequence):
+def isProtein(sequence: str) -> bool:
     """
     Will fail to tell apart proteins whose
     only amino acids are "A", "C", "G", "T"
