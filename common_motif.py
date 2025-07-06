@@ -103,7 +103,7 @@ def commonKmers(
     occurrence -= 10**-6
 
     hitsList: List[Dict[str, int]] = []
-    kmersLists: list[tuple[str, ...]] = []
+    kmersLists: List[Tuple[str, ...]] = []
     seqCount = 0
     unique: Set[str] = set()
     for seq in sequences:

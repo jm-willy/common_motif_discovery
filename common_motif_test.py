@@ -6,15 +6,15 @@ import utils
 
 class TestDict(unittest.TestCase):
     def test_seqToFreq(self):
-        x = utils.seqToFreq("ACGTA", testDNA)
+        x = utils.seqToFreq("ACGTA", utils.testDNA)
         self.assertEqual(x[0][0], 1)
         self.assertEqual(x[1][1], 1)
         self.assertEqual(x[3][3], 1)
         return
 
     def test_freqToSeq(self):
-        x = utils.seqToFreq("ACGTA", testDNA)
-        x = utils.freqToSeq(x, testDNA)
+        x = utils.seqToFreq("ACGTA", utils.testDNA)
+        x = utils.freqToSeq(x, utils.testDNA)
         self.assertTrue(x == "ACGTA")
         return
 
@@ -61,9 +61,9 @@ class TestDict(unittest.TestCase):
     def test_commonKmers(self):
         s1 = "TTTTTGGGG"
         s2 = s1.replace("T", "A")
-        x = common_motif.commonKmers(5, (s1, s2), similarity=4 / 5, occurrence=0.5)
-        self.assertTrue(x[0] == "TGGGG")
-        self.assertTrue(x[1] == "AGGGG")
+        x = common_motif.commonKmers(5, [s1, s2], similarity=4 / 5, occurrence=0.5)
+        self.assertTrue(x["TGGGG"] == 1)
+        self.assertTrue(x["AGGGG"] == 1)
         return
 
     def test_getComplementary(self):
