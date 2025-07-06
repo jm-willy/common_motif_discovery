@@ -1,6 +1,6 @@
 import random as r
 import time
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
 
 import numpy as np
 from numpy.typing import NDArray
@@ -36,20 +36,20 @@ testRNA = alphabetRNA[1:]
 testProtein = alphabetProtein[1:]
 
 
-def benchmark(func: Callable[[Any, Any], Any]):
+def benchmark(func):  # type: ignore
     loops = 1
 
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
+    def wrapper(*args, **kwargs):  # type: ignore
         start_time = time.time()
-        result: Any = func(*args, **kwargs)
+        result = func(*args, **kwargs)  # type: ignore
         for i in range(loops):
             func(*args, **kwargs)
         end_time = time.time()
         execution_time = end_time - start_time
-        print(f"Function '{func.__name__}' executed in {execution_time:.6f} seconds.")
-        return result
+        print(f"Function '{func.__name__}' executed in {execution_time:.6f} seconds.")  # type: ignore
+        return result  # type: ignore
 
-    return wrapper
+    return wrapper  # type: ignore
 
 
 def seqToFreq(sequence: str, alphabet: List[str]) -> NDArray[np.float64]:
@@ -77,7 +77,7 @@ def seqToFreq(sequence: str, alphabet: List[str]) -> NDArray[np.float64]:
     return np.array(matrix)
 
 
-def freqToSeq(frequencyMatrix: List[List[float]], alphabet: str) -> str:
+def freqToSeq(frequencyMatrix: NDArray[np.floating[Any]], alphabet: List[str]) -> str:
     """
     convert a frequency matrix to a sequence string with ambiguity notation
 
@@ -88,13 +88,13 @@ def freqToSeq(frequencyMatrix: List[List[float]], alphabet: str) -> str:
     Returns:
     str: Sequence with ambiguity notation using square brackets
     """
-    freqMatrix: NDArray[np.float64] = np.array(frequencyMatrix)
+    freqMatrix: NDArray[np.floating[Any]] = np.array(frequencyMatrix)
     sequence = ""
     for col in range(freqMatrix.shape[-1]):
         freqs = freqMatrix[:, col]
         max_freq = np.max(freqs)
         max_indices = np.where(freqs == max_freq)[0]
-        pos_alphabet = [alphabet[i] for i in max_indices]
+        pos_alphabet: List[str] = [alphabet[i] for i in max_indices]
         if len(pos_alphabet) == 1:
             sequence += pos_alphabet[0]
         else:
@@ -121,7 +121,7 @@ def insertMotif(index: int, motif: str, seq: str):
     return seq[:index] + motif + seq[index:]
 
 
-def dnaWithMotif(motifs: str, motifCount: int, seqLen: int, seqCount: int) -> List[str]:
+def dnaWithMotif(motifs: List[str], motifCount: int, seqLen: int, seqCount: int) -> List[str]:
     """
     get random DNA sequences with randmly inserted motifs.
     For more than 1 motifs, motifs may randomly replace other motifs

@@ -1,16 +1,19 @@
+from typing import Any, Callable, Dict, List, Set, Tuple
+
 import numpy as np
+from numpy.typing import NDArray
 
 from utils import benchmark, dnaWithMotif, freqToSeq, getAll, hitUp, isProtein, seqToFreq, testDNA
 
 
-def kmerHits(kmerLen, sequence):
+def kmerHits(kmerLen: int, sequence: str) -> Dict[str, int]:
     """
     kmer hits for a of sequence
 
     Returns:
     dict: { 'kmer' : count } for each kmer of kmerLen in the input seq
     """
-    result = {}
+    result: Dict[str, int] = {}
     _len = 1 + len(sequence) - kmerLen
     for i in range(_len):
         slider = sequence[i : i + kmerLen]
@@ -18,7 +21,7 @@ def kmerHits(kmerLen, sequence):
     return result
 
 
-def pairAminoAcidKmers(seq1, seq2, similarity=0.6):
+def pairAminoAcidKmers(seq1: str, seq2: str, similarity: float = 0.6) -> bool:
     """
     similarity of seq1 and seq2
 
@@ -42,7 +45,7 @@ def pairAminoAcidKmers(seq1, seq2, similarity=0.6):
     return False
 
 
-def pairNucleicKmers(seq1, seq2, similarity=0.6):
+def pairNucleicKmers(seq1: str, seq2: str, similarity: float = 0.6) -> bool:
     """
     similarity of seq1 and seq2
 
@@ -65,7 +68,7 @@ def pairNucleicKmers(seq1, seq2, similarity=0.6):
     return False
 
 
-def getPairKmersFunc(sequences):
+def getPairKmersFunc(sequences: str) -> Callable[[str, str, float], bool]:
     pairKmers = None
     isProteinBool = isProtein(sequences[0])
     if isProteinBool:
@@ -79,7 +82,12 @@ def getPairKmersFunc(sequences):
     return pairKmers
 
 
-def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
+def commonKmers(
+    kmerLen: int,
+    sequences: List[str],
+    similarity: float = 0.6,
+    occurrence: float = 0.6,
+) -> Dict[str, int]:
     """
     common kmers across input sequences
 
@@ -91,28 +99,26 @@ def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
     Returns:
     dict: { kmer : self count } identical, not similar, count
     """
-    if type(sequences) is not list and type(sequences) is not tuple:
-        raise ValueError("sequences type must be list[str]")
+
     occurrence -= 10**-6
 
-    hitsList = []
-    kmersLists = []
+    hitsList: List[Dict[str, int]] = []
+    kmersLists: list[tuple[str, ...]] = []
     seqCount = 0
-    unique = set()
+    unique: Set[str] = set()
     for seq in sequences:
         hits = kmerHits(kmerLen, seq)
         hitsList.append(hits)
-        _kmers = tuple(hits.keys())
+        _kmers: Tuple[str, ...] = tuple(hits.keys())
         kmersLists.append(_kmers)
         unique.update(_kmers)
         seqCount += 1
-    unique = tuple(unique)
 
-    common = {}
+    common: Dict[str, int] = {}
     for kmer in unique:
         common.update({kmer: 0})
 
-    pairKmers = getPairKmersFunc(sequences)
+    pairKmers = getPairKmersFunc(sequences)  # type: ignore
 
     iCount = 0
     for iList in kmersLists:
@@ -131,7 +137,7 @@ def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
                 common[iKmer] += hitsList[iCount][iKmer]
         iCount += 1
 
-    toDel = []
+    toDel: List[str] = []
     for _key in common:
         if common[_key] == 0:
             toDel.append(_key)
@@ -140,7 +146,12 @@ def commonKmers(kmerLen, sequences, similarity=0.6, occurrence=0.6):
     return common
 
 
-def groupKmers(kmerLen, sequences, similarity=0.7, occurrence=0.6):
+def groupKmers(
+    kmerLen: int,
+    sequences: List[str],
+    similarity: float = 0.7,
+    occurrence: float = 0.6,
+) -> Tuple[Dict[str, Set[str]], Dict[str, int]]:
     """
     kmers grouped by similarity
 
@@ -152,18 +163,18 @@ def groupKmers(kmerLen, sequences, similarity=0.7, occurrence=0.6):
     """
     common = commonKmers(kmerLen, sequences, similarity, occurrence)
     unique = tuple(common.keys())
-    result = {}
+    result: Dict[str, Set[str]] = {}
     for kmer in unique:
         result.update({kmer: set()})
 
-    pairKmers = getPairKmersFunc(sequences)
+    pairKmers = getPairKmersFunc(sequences)  # type: ignore
 
     for i in unique:
         for j in unique:
             if pairKmers(i, j, similarity):
                 result[i].add(j)
 
-    toDel = []
+    toDel: List[str] = []
     for _key in result:
         if len(result[_key]) == 0:
             toDel.append(_key)
@@ -172,7 +183,13 @@ def groupKmers(kmerLen, sequences, similarity=0.7, occurrence=0.6):
     return result, common
 
 
-def reduceGroup(kmerLen, sequences, alphabet, similarity=0.7, occurrence=0.6):
+def reduceGroup(
+    kmerLen: int,
+    sequences: List[str],
+    alphabet: List[str],
+    similarity: float = 0.7,
+    occurrence: float = 0.6,
+) -> Dict[str, NDArray[np.float64]]:
     """
     positional frequency for each kmer group
 
@@ -180,7 +197,7 @@ def reduceGroup(kmerLen, sequences, alphabet, similarity=0.7, occurrence=0.6):
     dict: { kmer : nd.array }
     """
     groups, kmerCount = groupKmers(kmerLen, sequences, similarity, occurrence)
-    result = {}
+    result: Dict[str, NDArray[np.float64]] = {}
     unique = tuple(groups.keys())
 
     for _key in unique:
@@ -193,7 +210,7 @@ def reduceGroup(kmerLen, sequences, alphabet, similarity=0.7, occurrence=0.6):
     return result
 
 
-def letterFreqs(kmerLen, sequence, alphabet):
+def letterFreqs(kmerLen: int, sequence: str, alphabet: List[str]) -> NDArray[np.floating[Any]]:
     """
     letter frequency for seq
 
@@ -201,17 +218,17 @@ def letterFreqs(kmerLen, sequence, alphabet):
     numpy.ndarray: positional frequency matrix
     """
     sliderLen = 1
-    result = np.zeros((len(alphabet), sliderLen))
+    result: NDArray[np.floating[Any]] = np.zeros((len(alphabet), sliderLen))
     _len = 1 + len(sequence) - sliderLen
     for i in range(_len):
         slider = sequence[i : i + sliderLen]
         result += seqToFreq(slider, alphabet)
     result = result / np.sum(result)
-    result = np.concat([result for i in range(kmerLen)], axis=-1)
+    result = np.concat([result for i in range(kmerLen)], axis=-1)  # type: ignore
     return result
 
 
-def kmerConvolution(x, y, alphabet):
+def kmerConvolution(x: str, y: str, alphabet: List[str]):
     """
     no-gap align 2 same length kmers seqs through convolution
     x is expanded, while y is slided over x like a convolutional kernel
@@ -227,17 +244,17 @@ def kmerConvolution(x, y, alphabet):
     xFreq = np.concat((zeros, xFreq, zeros), axis=-1).T
     yFreq = seqToFreq(y, alphabet).T
     _len = xFreq.shape[0] - kmerLen
-    aligns = []
+    aligns: List[NDArray[np.floating[Any]]] = []
     for i in range(_len):
         slider = xFreq[i : i + kmerLen]
         freq = (slider + yFreq) + (slider * yFreq)
         aligns.append(freq)
 
-    sums = []
+    sums: List[np.floating[Any]] = []
     for i in aligns:
         sums.append(np.sum(i))
 
-    _max = max(sums)
+    _max: np.floating[Any] = np.max(sums)
     count = 0
     result = np.array([])
     for i in sums:
@@ -247,7 +264,7 @@ def kmerConvolution(x, y, alphabet):
     return result
 
 
-def kmerConv(x, y, alphabet):
+def kmerConv(x: str, y: str, alphabet: List[str]):
     """
     get the best positional freq matrix for x and y
     seqs strs among both forward and reversed input
